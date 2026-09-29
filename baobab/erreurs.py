@@ -25,7 +25,7 @@ def _suggestion(mot, candidats):
     """Cherche dans les candidats un mot qui ressemble à 'mot'."""
     if len(mot) < 3:
         return None
-    proches = difflib.get_close_matches(mot, sorted(candidats), n=1, cutoff=0.75)
+    proches = difflib.get_close_matches(mot, sorted(candidats), n=1, cutoff=0.85)
     return proches[0] if proches and proches[0] != mot else None
 
 

@@ -1,3 +1,4 @@
+import os
 import sys
 
 from . import __version__
@@ -10,6 +11,7 @@ AIDE = """🌳 Baobab {version} - programmer en français
 
 Utilisation :
   baobab                          Mode interactif
+  baobab <fichier>                Exécuter un programme
   baobab lancer   <fichier.bao>   Exécuter un programme
   baobab expliquer <fichier.bao>  Voir chaque ligne avec son équivalent Python
   baobab python   <fichier.bao>   Voir le code Python généré
@@ -56,6 +58,11 @@ def principal(args=None):
             return 0
         print(transpiler(code))
         return 0
+
+    # baobab mon_programme.bao  ->  raccourci pour : baobab lancer mon_programme.bao
+    if os.path.isfile(commande):
+        code = _lire(commande)
+        return executer(code, commande) if code is not None else 1
 
     print(f"Commande inconnue : {commande}\n", file=sys.stderr)
     print(AIDE.format(version=__version__))
