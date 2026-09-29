@@ -6,7 +6,12 @@ essais = 0
 afficher("🎯 Devine le nombre entre 1 et 100 !")
 
 tantque vrai:
-    proposition = entier(saisir("Ton choix : "))
+    texte = saisir("Ton choix : ")
+    essayer:
+        proposition = entier(texte.nettoyer())
+    sauf ErreurValeur:
+        afficher("Ce n'est pas un nombre entier :", texte)
+        continuer
     essais = essais + 1
     si proposition < secret:
         afficher("Trop petit !")

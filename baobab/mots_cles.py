@@ -62,3 +62,15 @@ MODULES.update({
     "fichiers": "baobab_fichiers",
 })
 MODULES["dessin"] = "baobab_dessin"
+
+# Noms d'erreurs en français (pour essayer / sauf)
+DICTIONNAIRE.update({
+    "Erreur": "Exception",
+    "ErreurValeur": "ValueError",
+    "ErreurType": "TypeError",
+    "ErreurNom": "NameError",
+    "ErreurIndex": "IndexError",
+    "ErreurCle": "KeyError",
+    "DivisionParZero": "ZeroDivisionError",
+    "FichierIntrouvable": "FileNotFoundError",
+})
