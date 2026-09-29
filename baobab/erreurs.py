@@ -1,4 +1,7 @@
+import difflib
 import re
+
+from .mots_cles import ATTRIBUTS, DICTIONNAIRE
 
 SYNTAXE = {
     "invalid syntax": "syntaxe invalide",
@@ -18,9 +21,22 @@ def _traduire_syntaxe(message):
     return message
 
 
-def expliquer(exception):
-    """Retourne une phrase en français qui explique l'erreur."""
+def _suggestion(mot, candidats):
+    """Cherche dans les candidats un mot qui ressemble à 'mot'."""
+    if len(mot) < 3:
+        return None
+    proches = difflib.get_close_matches(mot, sorted(candidats), n=1, cutoff=0.75)
+    return proches[0] if proches and proches[0] != mot else None
+
+
+def expliquer(exception, noms_connus=()):
+    """Retourne une phrase en français qui explique l'erreur.
+
+    noms_connus : noms créés par le programme (variables, fonctions),
+    pour pouvoir proposer 'Voulais-tu dire ... ?'
+    """
     msg = str(exception)
+    noms_utilisateur = {n for n in noms_connus if not n.startswith("__")}
 
     if isinstance(exception, SyntaxError):
         return "Erreur d'écriture : " + _traduire_syntaxe(exception.msg or msg)
@@ -30,11 +46,19 @@ def expliquer(exception):
     if isinstance(exception, NameError):
         m = re.search(r"'(.+?)'", msg)
         nom = m.group(1) if m else "?"
-        return f"Le nom '{nom}' n'existe pas. Vérifie l'orthographe ou crée-le d'abord."
+        texte = f"Le nom '{nom}' n'existe pas."
+        proche = _suggestion(nom, set(DICTIONNAIRE) | noms_utilisateur)
+        if proche:
+            return texte + f" Voulais-tu dire '{proche}' ?"
+        return texte + " Vérifie l'orthographe ou crée-le d'abord."
     if isinstance(exception, AttributeError):
         noms = re.findall(r"'(.+?)'", msg)
         if noms:
-            return f"Cet objet n'a pas de '{noms[-1]}'. Vérifie le nom de la méthode."
+            texte = f"Cet objet n'a pas de '{noms[-1]}'."
+            proche = _suggestion(noms[-1], set(ATTRIBUTS) | noms_utilisateur)
+            if proche:
+                return texte + f" Voulais-tu dire '{proche}' ?"
+            return texte + " Vérifie le nom de la méthode."
         return "Cet objet n'a pas cette méthode."
     if isinstance(exception, ZeroDivisionError):
         return "Division par zéro : on ne peut pas diviser par 0."

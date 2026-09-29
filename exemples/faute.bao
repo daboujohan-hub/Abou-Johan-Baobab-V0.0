@@ -1,0 +1,2 @@
+fruits = ["mangue"]
+fruits.ajouer("papaye")

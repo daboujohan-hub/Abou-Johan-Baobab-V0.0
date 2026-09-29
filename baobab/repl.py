@@ -51,7 +51,7 @@ def _executer(code, espace):
     except SystemExit:
         raise
     except Exception as e:
-        print("❌", expliquer(e))
+        print("❌", expliquer(e, list(espace)))
 
 
 def lancer():

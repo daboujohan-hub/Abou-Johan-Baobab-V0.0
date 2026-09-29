@@ -1,0 +1,2 @@
+prenom = "Awa"
+afficer(prenom)

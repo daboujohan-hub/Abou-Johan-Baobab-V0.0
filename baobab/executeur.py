@@ -13,14 +13,14 @@ def _ligne_de(source_lignes, numero):
     return ""
 
 
-def _afficher_erreur(exception, nom_fichier, source_lignes, numero):
+def _afficher_erreur(exception, nom_fichier, source_lignes, numero, noms=()):
     print("\n❌ Oups, une erreur dans ton programme Baobab", file=sys.stderr)
     if numero:
         print(f"   Fichier : {nom_fichier}, ligne {numero}", file=sys.stderr)
         texte = _ligne_de(source_lignes, numero)
         if texte:
             print(f"   Code    : {texte}", file=sys.stderr)
-    print(f"   Explication : {expliquer(exception)}", file=sys.stderr)
+    print(f"   Explication : {expliquer(exception, noms)}", file=sys.stderr)
 
 
 def executer(code_baobab, nom_fichier="<baobab>"):
@@ -45,6 +45,6 @@ def executer(code_baobab, nom_fichier="<baobab>"):
         for cadre in traceback.extract_tb(e.__traceback__):
             if cadre.filename == nom_fichier:
                 numero = cadre.lineno
-        _afficher_erreur(e, nom_fichier, source_lignes, numero)
+        _afficher_erreur(e, nom_fichier, source_lignes, numero, list(espace))
         return 1
     return 0
