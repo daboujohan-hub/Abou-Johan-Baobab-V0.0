@@ -1,0 +1,2 @@
+u7nom = saisir("Ton nom : ")
+afficher("Bienvenue dans Baobab,", nom)

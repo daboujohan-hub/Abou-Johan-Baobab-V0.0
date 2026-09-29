@@ -1,0 +1,5 @@
+importer mathematiques
+importer hasard
+
+afficher("Racine de 16 :", mathematiques.racine(16))
+afficher("Nombre aléatoire (1 à 10) :", hasard.entier(1, 10))

@@ -1,0 +1,11 @@
+fonction carre(x):
+    retourner x * x
+
+fonction est_pair(n):
+    retourner n % 2 == 0
+
+pour i dans intervalle(1, 6):
+    si est_pair(i):
+        afficher(i, "est pair, carré =", carre(i))
+    sinon:
+        afficher(i, "est impair")

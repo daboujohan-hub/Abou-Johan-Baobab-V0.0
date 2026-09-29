@@ -1,0 +1,4 @@
+eleve = {"nom": "Awa", "note": 15}
+
+pour cle, valeur dans eleve.elements():
+    afficher(cle, "=", valeur)

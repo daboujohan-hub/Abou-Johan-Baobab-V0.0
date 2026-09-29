@@ -1,0 +1,2 @@
+afficher("Début")
+afficher(prenom)

@@ -1,0 +1,4 @@
+# Mon premier programme Baobab
+afficher("Bonjour le monde !")
+nom = saisir("Comment tu t'appelles ? ")
+afficher("Salut", nom, "🌳")

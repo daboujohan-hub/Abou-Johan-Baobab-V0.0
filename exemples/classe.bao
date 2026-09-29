@@ -1,0 +1,9 @@
+classe Animal:
+    fonction construire(soi, nom):
+        soi.nom = nom
+
+    fonction parler(soi):
+        afficher(soi.nom, "fait du bruit")
+
+chat = Animal("Minou")
+chat.parler()

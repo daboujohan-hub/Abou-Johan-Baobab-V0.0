@@ -1,0 +1,8 @@
+fruits = ["mangue", "banane"]
+fruits.ajouter("papaye")
+fruits.trier()
+
+pour f dans fruits:
+    afficher(f.majuscule())
+
+afficher("Nombre de fruits :", longueur(fruits))

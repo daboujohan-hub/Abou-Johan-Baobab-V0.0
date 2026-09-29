@@ -1,0 +1,8 @@
+age = entier(saisir("Quel est ton âge ? "))
+
+si age >= 18:
+    afficher("Tu es majeur")
+sinonsi age >= 12:
+    afficher("Tu es adolescent")
+sinon:
+    afficher("Tu es enfant")

@@ -1,0 +1,8 @@
+pour i dans intervalle(1, 6):
+    afficher("Compteur :", i)
+
+n = 3
+tantque n > 0:
+    afficher("Décompte", n)
+    n = n - 1
+afficher("Partez !")
