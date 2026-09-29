@@ -69,3 +69,7 @@ Il faut seulement Python 3.8 ou plus récent.
     tests/                    tests automatiques
 
 Créé par Aboudev 🇨🇮
+
+## Apprendre
+
+Voir le tutoriel : [docs/tutoriel.md](docs/tutoriel.md)
