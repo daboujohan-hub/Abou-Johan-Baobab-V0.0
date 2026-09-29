@@ -2,16 +2,18 @@ import sys
 
 from . import __version__
 from .executeur import executer
+from .explication import expliquer_code
 from .repl import lancer as mode_interactif
 from .transpileur import transpiler
 
 AIDE = """🌳 Baobab {version} - programmer en français
 
 Utilisation :
-  baobab                         Mode interactif
-  baobab lancer  <fichier.bao>   Exécuter un programme
-  baobab python  <fichier.bao>   Voir le code Python généré
-  baobab version                 Afficher la version
+  baobab                          Mode interactif
+  baobab lancer   <fichier.bao>   Exécuter un programme
+  baobab expliquer <fichier.bao>  Voir chaque ligne avec son équivalent Python
+  baobab python   <fichier.bao>   Voir le code Python généré
+  baobab version                  Afficher la version
 """
 
 
@@ -40,7 +42,7 @@ def principal(args=None):
         print(f"Baobab {__version__}")
         return 0
 
-    if commande in ("lancer", "python"):
+    if commande in ("lancer", "python", "expliquer"):
         if len(args) < 2:
             print("Il manque le nom du fichier.", file=sys.stderr)
             return 1
@@ -49,6 +51,9 @@ def principal(args=None):
             return 1
         if commande == "lancer":
             return executer(code, args[1])
+        if commande == "expliquer":
+            print(expliquer_code(code))
+            return 0
         print(transpiler(code))
         return 0
 
