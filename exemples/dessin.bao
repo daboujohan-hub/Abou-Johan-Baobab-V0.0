@@ -1,0 +1,10 @@
+importer dessin
+
+dessin.fond("lightyellow")
+dessin.couleur("red")
+
+pour i dans intervalle(12):
+    dessin.etoile(70)
+    dessin.tourner_droite(30)
+
+dessin.sauvegarder("etoiles.svg")

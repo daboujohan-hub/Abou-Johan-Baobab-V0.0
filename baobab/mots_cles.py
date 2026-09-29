@@ -55,3 +55,10 @@ ATTRIBUTS = {
     "melanger": "shuffle", "nombre": "random",
     "attendre": "sleep", "maintenant": "time", "quitter": "exit",
 }
+
+# Bibliothèque française de Baobab
+MODULES.update({
+    "dates": "baobab_dates",
+    "fichiers": "baobab_fichiers",
+})
+MODULES["dessin"] = "baobab_dessin"

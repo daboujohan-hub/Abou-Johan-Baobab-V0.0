@@ -1,0 +1,9 @@
+importer fichiers
+importer dates
+
+note = saisir("Ta note du jour : ")
+fichiers.ajouter_ligne("carnet.txt", dates.date_du_jour() + " : " + note)
+
+afficher("--- Ton carnet ---")
+pour ligne dans fichiers.lire_lignes("carnet.txt"):
+    afficher(ligne)

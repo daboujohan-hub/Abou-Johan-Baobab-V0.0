@@ -4,7 +4,7 @@ Un langage de programmation **en français**, pensé pour les débutants,
 avec une transition facile vers Python.
 
 Baobab traduit ton code français en Python, puis l'exécute.
-Les erreurs sont expliquées en français.
+Les erreurs sont expliquées en français, avec des suggestions de correction.
 
 ## Exemple
 
@@ -16,7 +16,7 @@ Les erreurs sont expliquées en français.
 
 ## Utilisation
 
-    python -m baobab                              mode interactif
+    python -m baobab                                mode interactif
     python -m baobab lancer exemples/fonctions.bao
     python -m baobab expliquer exemples/boucles.bao
     python -m baobab python exemples/boucles.bao
@@ -24,6 +24,23 @@ Les erreurs sont expliquées en français.
 - `lancer` exécute le programme
 - `expliquer` montre chaque ligne Baobab avec son équivalent Python
 - `python` affiche le code Python généré
+
+## Bibliothèque française
+
+    importer dates       date_du_jour(), heure(), difference_en_jours(...), age_depuis(...)
+    importer fichiers    lire(...), ecrire(...), ajouter_ligne(...), existe(...)
+    importer dessin      avancer(...), tourner_droite(...), carre(...), etoile(...), sauvegarder(...)
+    importer mathematiques, hasard, temps
+
+Exemple avec le dessin (l'image s'enregistre en .svg, à ouvrir dans un navigateur) :
+
+    importer dessin
+
+    dessin.couleur("red")
+    pour i dans intervalle(12):
+        dessin.etoile(70)
+        dessin.tourner_droite(30)
+    dessin.sauvegarder("etoiles.svg")
 
 ## Installation
 
@@ -39,15 +56,16 @@ Il faut seulement Python 3.8 ou plus récent.
 
 ## Structure
 
-    baobab/mots_cles.py     dictionnaire français -> Python
-    baobab/lexeur.py        découpe le code en jetons
-    baobab/transpileur.py   traduit Baobab en Python
-    baobab/erreurs.py       messages d'erreur en français
-    baobab/executeur.py     exécute le code
-    baobab/explication.py   mode explication
-    baobab/repl.py          mode interactif
-    baobab/cli.py           commandes
-    exemples/               programmes d'exemple (.bao)
-    tests/                  tests automatiques
+    baobab/mots_cles.py       dictionnaire français -> Python
+    baobab/lexeur.py          découpe le code en jetons
+    baobab/transpileur.py     traduit Baobab en Python
+    baobab/erreurs.py         messages d'erreur en français
+    baobab/executeur.py       exécute le code
+    baobab/explication.py     mode explication
+    baobab/repl.py            mode interactif
+    baobab/cli.py             commandes
+    baobab/bibliotheque/      dates, fichiers, dessin
+    exemples/                 programmes d'exemple (.bao)
+    tests/                    tests automatiques
 
 Créé par Aboudev 🇨🇮

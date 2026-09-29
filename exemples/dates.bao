@@ -1,0 +1,5 @@
+importer dates
+
+afficher("Nous sommes le", dates.date_du_jour())
+afficher("Il est", dates.heure())
+afficher("Jours entre deux dates :", dates.difference_en_jours("2026-01-01", "2026-12-31"))
