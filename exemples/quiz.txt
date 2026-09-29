@@ -1,0 +1,4 @@
+Quelle est la capitale politique de la Côte d'Ivoire ?|yamoussoukro
+Combien font 3 x 5 ?|15
+Quel langage tourne sous Baobab ?|python
+Combien de jours dans une semaine ?|7

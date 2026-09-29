@@ -1,0 +1,17 @@
+importer hasard
+
+secret = hasard.entier(1, 100)
+essais = 0
+
+afficher("🎯 Devine le nombre entre 1 et 100 !")
+
+tantque vrai:
+    proposition = entier(saisir("Ton choix : "))
+    essais = essais + 1
+    si proposition < secret:
+        afficher("Trop petit !")
+    sinonsi proposition > secret:
+        afficher("Trop grand !")
+    sinon:
+        afficher("Bravo ! Trouvé en", essais, "essais 🎉")
+        arreter

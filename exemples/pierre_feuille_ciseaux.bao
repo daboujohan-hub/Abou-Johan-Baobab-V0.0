@@ -1,0 +1,28 @@
+importer hasard
+
+choix = ["pierre", "feuille", "ciseaux"]
+gagne_sur = {"pierre": "ciseaux", "feuille": "pierre", "ciseaux": "feuille"}
+score_joueur = 0
+score_ordi = 0
+
+afficher("✊ Pierre - Feuille - Ciseaux (écris 'stop' pour finir)")
+
+tantque vrai:
+    joueur = saisir("Ton choix (pierre/feuille/ciseaux) : ").minuscule()
+    si joueur == "stop":
+        arreter
+    si joueur non dans choix:
+        afficher("Choix invalide, réessaie.")
+        continuer
+    ordi = hasard.choisir(choix)
+    afficher("L'ordinateur a joué :", ordi)
+    si joueur == ordi:
+        afficher("Égalité !")
+    sinonsi gagne_sur[joueur] == ordi:
+        afficher("Tu gagnes ! 🎉")
+        score_joueur = score_joueur + 1
+    sinon:
+        afficher("L'ordinateur gagne.")
+        score_ordi = score_ordi + 1
+
+afficher("Score final - Toi :", score_joueur, "- Ordinateur :", score_ordi)

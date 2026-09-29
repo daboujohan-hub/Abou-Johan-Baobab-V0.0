@@ -1,0 +1,17 @@
+importer fichiers
+
+lignes = fichiers.lire_lignes("exemples/quiz.txt")
+score = 0
+
+pour ligne dans lignes:
+    parties = ligne.separer("|")
+    question = parties[0]
+    reponse = parties[1]
+    essai = saisir(question + " ").minuscule().nettoyer()
+    si essai == reponse:
+        afficher("✅ Bonne réponse !")
+        score = score + 1
+    sinon:
+        afficher("❌ La réponse était :", reponse)
+
+afficher("Score :", score, "/", longueur(lignes))
