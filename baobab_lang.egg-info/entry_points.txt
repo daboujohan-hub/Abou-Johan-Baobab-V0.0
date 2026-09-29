@@ -1,2 +1,0 @@
-[console_scripts]
-baobab = baobab.cli:principal
