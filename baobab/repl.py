@@ -1,3 +1,8 @@
+try:
+    import readline  # flèches, retour arrière et historique
+except ImportError:
+    pass
+
 from . import __version__
 from .erreurs import expliquer
 from .transpileur import transpiler
