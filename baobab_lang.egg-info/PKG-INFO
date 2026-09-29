@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: baobab-lang
+Version: 0.6.0
+Summary: Baobab : un langage de programmation en français, propulsé par Python
+Requires-Python: >=3.8
