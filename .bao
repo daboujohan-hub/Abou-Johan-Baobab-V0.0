@@ -1,0 +1,8 @@
+fonction addition(a, b):
+    retourner a + b
+
+fonction multiplication(a, b):
+    retourner a * b
+
+afficher(addition(10, 5))
+afficher(multiplication(7, 8))

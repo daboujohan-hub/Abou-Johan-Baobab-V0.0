@@ -75,3 +75,32 @@ DICTIONNAIRE.update({
     "FichierIntrouvable": "FileNotFoundError",
 })
 MODULES["serveur"] = "baobab_serveur"
+
+# Plus de mots pour les développeurs
+_NOUVEAUX_MOTS = {
+    "anonyme": "lambda",
+    "globale": "global",
+    "nonlocale": "nonlocal",
+    "effacer": "del",
+    "verifier": "assert",
+    "vérifier": "assert",
+    "produire": "yield",
+}
+_NOUVELLES_FONCTIONS = {
+    "appliquer": "map",
+    "filtrer": "filter",
+    "tous": "all",
+    "au_moins_un": "any",
+    "est_instance": "isinstance",
+    "inverse": "reversed",
+    "caractere": "chr",
+    "caractère": "chr",
+    "code_de": "ord",
+    "quotient_reste": "divmod",
+    "parent": "super",
+}
+MOTS_CLES.update(_NOUVEAUX_MOTS)
+FONCTIONS.update(_NOUVELLES_FONCTIONS)
+DICTIONNAIRE.update(_NOUVEAUX_MOTS)
+DICTIONNAIRE.update(_NOUVELLES_FONCTIONS)
+ATTRIBUTS["construire"] = "__init__"
