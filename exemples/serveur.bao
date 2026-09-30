@@ -1,0 +1,12 @@
+importer http.server
+
+classe Page(http.server.BaseHTTPRequestHandler):
+    fonction do_GET(soi):
+        soi.send_response(200)
+        soi.send_header("Content-Type", "text/html; charset=utf-8")
+        soi.end_headers()
+        soi.wfile.write("<h1>Bonjour depuis Baobab 🌳</h1>".encode("utf-8"))
+
+serveur = http.server.HTTPServer(("", 8000), Page)
+afficher("Serveur Baobab sur http://localhost:8000 (Ctrl+C pour arrêter)")
+serveur.serve_forever()

@@ -1,0 +1,35 @@
+importer serveur
+importer fichiers
+importer dates
+
+FICHIER = "livre_or.txt"
+
+fonction accueil():
+    messages = []
+    si fichiers.existe(FICHIER):
+        messages = fichiers.lire_lignes(FICHIER)
+    messages.inverser()
+
+    liste = ""
+    pour ligne dans messages:
+        liste = liste + "<li>" + serveur.echapper(ligne) + "</li>"
+
+    formulaire = "<form method='post' action='/ajouter'>"
+    formulaire = formulaire + "<p><input name='nom' placeholder='Ton prénom' required></p>"
+    formulaire = formulaire + "<p><textarea name='message' placeholder='Ton message' required></textarea></p>"
+    formulaire = formulaire + "<button>Envoyer</button></form>"
+
+    retourner serveur.page("Livre d'or", "<h1>📖 Livre d'or</h1>" + formulaire + "<ul>" + liste + "</ul>")
+
+fonction ajouter_message(parametres):
+    nom = parametres.obtenir("nom", "anonyme")[:30]
+    message = parametres.obtenir("message", "")[:200]
+    si message.nettoyer() != "":
+        ligne = dates.aujourdhui() + " - " + nom + " : " + message
+        ligne = ligne.remplacer("\n", " ")
+        fichiers.ajouter_ligne(FICHIER, ligne)
+    retourner serveur.rediriger("/")
+
+serveur.route("/", accueil)
+serveur.route("/ajouter", ajouter_message)
+serveur.demarrer(8000)

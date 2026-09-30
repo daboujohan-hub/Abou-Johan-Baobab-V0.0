@@ -1,0 +1,23 @@
+importer serveur
+importer dates
+
+fonction accueil():
+    retourner serveur.page("Mon site Baobab", "<h1>Bienvenue 🌳</h1><p><a href='/bonjour?nom=Awa'>Dire bonjour</a> | <a href='/heure'>Quelle heure ?</a> | <a href='/api'>Données</a></p>")
+
+fonction bonjour(parametres):
+    nom = serveur.echapper(parametres.obtenir("nom", "inconnu"))
+    retourner serveur.page("Bonjour", "<h1>Bonjour " + nom + " !</h1><a href='/'>Retour</a>")
+
+fonction page_heure():
+    texte = dates.date_du_jour() + ", il est " + dates.heure()
+    retourner serveur.page("Heure", "<h1>" + texte + "</h1><a href='/'>Retour</a>")
+
+fonction donnees():
+    retourner {"langage": "Baobab", "date": dates.aujourdhui()}
+
+serveur.route("/", accueil)
+serveur.route("/bonjour", bonjour)
+serveur.route("/heure", page_heure)
+serveur.route("/api", donnees)
+
+serveur.demarrer(8000)

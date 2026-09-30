@@ -74,3 +74,4 @@ DICTIONNAIRE.update({
     "DivisionParZero": "ZeroDivisionError",
     "FichierIntrouvable": "FileNotFoundError",
 })
+MODULES["serveur"] = "baobab_serveur"
