@@ -1,0 +1,20 @@
+importer serveur
+importer taches
+importer fichiers
+
+visites = 0
+si fichiers.existe("visites.txt"):
+    visites = entier(fichiers.lire("visites.txt"))
+
+fonction accueil():
+    globale visites
+    visites = visites + 1
+    retourner serveur.page("Compteur", "<h1>Visites : " + chaine(visites) + "</h1>")
+
+fonction sauvegarder_compteur():
+    fichiers.ecrire("visites.txt", visites)
+
+taches.toutes_les(10, sauvegarder_compteur, nom="sauvegarde")
+
+serveur.route("/", accueil)
+serveur.demarrer(8000)

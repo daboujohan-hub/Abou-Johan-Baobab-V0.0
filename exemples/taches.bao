@@ -1,0 +1,13 @@
+importer taches
+importer dates
+
+compteur = 0
+
+fonction battement():
+    globale compteur
+    compteur = compteur + 1
+    afficher("⏰ Tic numéro", compteur, "à", dates.heure())
+
+taches.toutes_les(2, battement)
+afficher("Les tâches tournent. Ctrl+C pour arrêter.")
+taches.demarrer()

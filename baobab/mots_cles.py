@@ -104,3 +104,4 @@ FONCTIONS.update(_NOUVELLES_FONCTIONS)
 DICTIONNAIRE.update(_NOUVEAUX_MOTS)
 DICTIONNAIRE.update(_NOUVELLES_FONCTIONS)
 ATTRIBUTS["construire"] = "__init__"
+MODULES.update({"taches": "baobab_taches", "tâches": "baobab_taches"})
