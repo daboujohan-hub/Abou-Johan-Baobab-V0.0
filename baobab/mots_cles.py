@@ -105,3 +105,9 @@ DICTIONNAIRE.update(_NOUVEAUX_MOTS)
 DICTIONNAIRE.update(_NOUVELLES_FONCTIONS)
 ATTRIBUTS["construire"] = "__init__"
 MODULES.update({"taches": "baobab_taches", "tâches": "baobab_taches"})
+
+# Importer des tests et écrire des programmes réutilisables
+MODULES["tests"] = "baobab_tests"
+_PRINCIPAL = {"programme_principal": '__name__ == "__main__"'}
+MOTS_CLES.update(_PRINCIPAL)
+DICTIONNAIRE.update(_PRINCIPAL)

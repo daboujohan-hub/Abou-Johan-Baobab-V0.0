@@ -1,0 +1,39 @@
+importer tests
+importer fichiers
+importer livre_or
+
+FICHIER_TEST = "test_livre_or.txt"
+
+fonction avant_chaque():
+    livre_or.FICHIER = FICHIER_TEST
+    si fichiers.existe(FICHIER_TEST):
+        fichiers.supprimer(FICHIER_TEST)
+
+fonction apres_chaque():
+    si fichiers.existe(FICHIER_TEST):
+        fichiers.supprimer(FICHIER_TEST)
+
+fonction test_page_accueil():
+    reponse = tests.requete("/")
+    tests.egal(reponse.code, 200)
+    tests.contient(reponse.texte, "Livre d'or")
+
+fonction test_ajouter_un_message():
+    reponse = tests.requete("/ajouter", {"nom": "Awa", "message": "Bravo !"})
+    tests.egal(reponse.code, 303)
+    tests.egal(reponse.adresse, "/")
+    page = tests.requete("/")
+    tests.contient(page.texte, "Awa : Bravo !")
+
+fonction test_message_vide_ignore():
+    tests.requete("/ajouter", {"nom": "Awa", "message": "   "})
+    tests.est_faux(fichiers.existe(FICHIER_TEST))
+
+fonction test_html_est_neutralise():
+    tests.requete("/ajouter", {"nom": "Awa", "message": "<script>alert(1)</script>"})
+    page = tests.requete("/")
+    tests.est_faux("<script>alert" dans page.texte)
+    tests.contient(page.texte, "&lt;script&gt;")
+
+fonction test_page_inconnue():
+    tests.egal(tests.requete("/nimporte-quoi").code, 404)

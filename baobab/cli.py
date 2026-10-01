@@ -13,6 +13,7 @@ Utilisation :
   baobab                          Mode interactif
   baobab <fichier>                Exécuter un programme
   baobab lancer   <fichier.bao>   Exécuter un programme
+  baobab tester   [fichier|dossier]  Lancer les tests (test_*.bao)
   baobab expliquer <fichier.bao>  Voir chaque ligne avec son équivalent Python
   baobab python   <fichier.bao>   Voir le code Python généré
   baobab version                  Afficher la version
@@ -43,6 +44,11 @@ def principal(args=None):
     if commande == "version":
         print(f"Baobab {__version__}")
         return 0
+
+    if commande == "tester":
+        from .testeur import lancer_tests
+
+        return lancer_tests(args[1] if len(args) > 1 else None)
 
     if commande in ("lancer", "python", "expliquer"):
         if len(args) < 2:

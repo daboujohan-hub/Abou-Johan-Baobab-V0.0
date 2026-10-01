@@ -32,4 +32,5 @@ fonction ajouter_message(parametres):
 
 serveur.route("/", accueil)
 serveur.route("/ajouter", ajouter_message)
-serveur.demarrer(8000)
+si programme_principal:
+    serveur.demarrer(8000)

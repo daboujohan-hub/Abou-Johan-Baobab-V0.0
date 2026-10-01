@@ -73,3 +73,10 @@ Créé par Aboudev 🇨🇮
 ## Apprendre
 
 Voir le tutoriel : [docs/tutoriel.md](docs/tutoriel.md)
+
+## Tester ses applications
+
+    baobab tester              lance tous les fichiers test_*.bao
+    baobab tester exemples     lance les tests d un dossier
+
+Un test est une fonction test_... qui utilise le module tests (tests.egal, tests.contient, tests.requete).

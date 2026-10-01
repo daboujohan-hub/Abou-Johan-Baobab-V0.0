@@ -1,0 +1,10 @@
+importer tests
+
+fonction double(x):
+    retourner x * 2
+
+fonction test_double():
+    tests.egal(double(4), 8)
+
+fonction test_pas_de_division_par_zero():
+    tests.leve_erreur(anonyme: 1 / 0, DivisionParZero)
