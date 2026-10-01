@@ -80,3 +80,21 @@ Voir le tutoriel : [docs/tutoriel.md](docs/tutoriel.md)
     baobab tester exemples     lance les tests d un dossier
 
 Un test est une fonction test_... qui utilise le module tests (tests.egal, tests.contient, tests.requete).
+
+## Limites connues
+
+- Baobab **traduit le français vers Python** : même vitesse, mêmes règles (indentation, `:`). Python doit être installé.
+- Quelques mots avancés de Python n'ont pas encore de version française (`async`, `await`, `match`...). Ils fonctionnent quand même, en anglais.
+- Le mélange français/anglais est accepté, ce qui est pratique mais peut donner de mauvaises habitudes.
+- Si tu définis dans un fichier `.bao` une méthode qui porte le nom d'une méthode de liste ou de texte (`ajouter`, `trier`, `separer`...) et que tu l'appelles depuis un **autre** fichier, Baobab la traduira à tort.
+- Les erreurs de syntaxe restent assez générales.
+- Le module `serveur` sert à apprendre : pas de HTTPS, pas de comptes, pas de base de données, pas d'anti-spam. Ne l'expose pas tel quel sur Internet.
+- Baobab exécute n'importe quel code sans protection : ne lance jamais le code d'un inconnu.
+- Les tâches du module `taches` s'arrêtent avec le programme (sur téléphone, Android peut mettre Termux en pause).
+- Le module `dessin` produit des images SVG, pas d'animation.
+- Testé surtout sous Android (Termux) et Linux, avec un Python récent. Pas encore testé sous Windows ni macOS.
+- Pas d'éditeur avec couleurs ni de débogueur pour l'instant.
+
+## Commande courte
+
+La commande `bao` fait la même chose que `baobab` (utile si `baobab` existe déjà sur ton ordinateur).

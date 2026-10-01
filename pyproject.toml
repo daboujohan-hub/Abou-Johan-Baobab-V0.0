@@ -1,15 +1,32 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "baobab-lang"
+name = "baobab-francais"
 version = "0.9.0"
 description = "Baobab : un langage de programmation en français, propulsé par Python"
+readme = "README.md"
 requires-python = ">=3.8"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Diomande Abou Johan (Aboudev)"}]
+keywords = ["français", "langage de programmation", "éducation", "débutants", "baobab"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Natural Language :: French",
+    "Intended Audience :: Education",
+    "Topic :: Education",
+    "Topic :: Software Development :: Interpreters",
+]
+
+[project.urls]
+Homepage = "https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0"
+Issues = "https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0/issues"
 
 [project.scripts]
 baobab = "baobab.cli:principal"
+bao = "baobab.cli:principal"
 
 [tool.setuptools]
 packages = ["baobab", "baobab.bibliotheque"]
