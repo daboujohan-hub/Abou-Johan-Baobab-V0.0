@@ -1,0 +1,41 @@
+name: Publier
+
+on:
+  workflow_dispatch:
+
+jobs:
+  construire:
+    name: Tester et construire le paquet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Installer l'outil de construction
+        run: python -m pip install build
+      - name: Lancer les tests
+        run: python -m unittest discover tests
+      - name: Construire le paquet
+        run: python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paquet
+          path: dist/
+
+  publier-testpypi:
+    name: Envoyer sur TestPyPI
+    needs: construire
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: paquet
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
