@@ -6,3 +6,5 @@ baobab_lang.egg-info/
 *.egg-info/
 livre_or.txt
 visites.txt
+dist/
+node_modules/
