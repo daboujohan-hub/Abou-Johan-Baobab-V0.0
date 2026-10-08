@@ -111,3 +111,4 @@ MODULES["tests"] = "baobab_tests"
 _PRINCIPAL = {"programme_principal": '__name__ == "__main__"'}
 MOTS_CLES.update(_PRINCIPAL)
 DICTIONNAIRE.update(_PRINCIPAL)
+MODULES["disque"] = "baobab_disque"

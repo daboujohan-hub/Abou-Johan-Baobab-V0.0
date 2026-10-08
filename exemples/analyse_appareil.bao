@@ -1,0 +1,17 @@
+importer disque
+
+fonction analyser(dossier):
+    essayer:
+        trouves = disque.scanner(dossier)
+    sauf FichierIntrouvable:
+        afficher("Dossier introuvable :", dossier)
+        afficher("Sur Termux, lance d'abord une fois : termux-setup-storage")
+        retourner
+    afficher(disque.rapport(trouves))
+
+choix = saisir("Dossier à analyser (Entrée = ton stockage) : ").nettoyer()
+si choix == "":
+    choix = "~/storage/shared"
+
+afficher("Analyse en cours (lecture seule), patiente...")
+analyser(choix)
