@@ -183,8 +183,16 @@ def espace_gaspille(groupes):
     return sum((len(g) - 1) * g[0].taille for g in groupes)
 
 
+def appartient_a_une_application(fichier):
+    """Vrai si le fichier est rangé dans Android/... (dossiers gérés par les applications)."""
+    return f"{os.sep}android{os.sep}" in fichier.chemin.lower()
+
+
 def inutiles(fichiers):
-    """Fichiers probablement jetables : [(fichier, raison)]. À vérifier toi-même !"""
+    """Fichiers probablement jetables : [(fichier, raison)], les plus lourds d'abord.
+
+    Ce sont des indices, pas des certitudes : à vérifier toi-même !
+    """
     resultat = []
     for f in fichiers:
         nom = os.path.basename(f.chemin).lower()
@@ -197,7 +205,42 @@ def inutiles(fichiers):
             resultat.append((f, "fichier système inutile"))
         elif dossiers & DOSSIERS_JETABLES:
             resultat.append((f, "dossier de cache ou de miniatures"))
-    return resultat
+    return sorted(resultat, key=lambda element: -element[0].taille)
+
+
+def inutiles_par_raison(fichiers):
+    """{raison: (nombre, taille)}, du plus lourd au plus léger."""
+    totaux = {}
+    for f, raison in inutiles(fichiers):
+        nombre, taille = totaux.get(raison, (0, 0))
+        totaux[raison] = (nombre + 1, taille + f.taille)
+    return dict(sorted(totaux.items(), key=lambda element: -element[1][1]))
+
+
+def installateurs(fichiers):
+    """Fichiers d'installation d'applications (.apk), les plus lourds d'abord."""
+    return sorted((f for f in fichiers if f.categorie == "applications"),
+                  key=lambda f: -f.taille)
+
+
+def par_application(fichiers):
+    """{application: (nombre, taille, nombre d'images)} pour WhatsApp, Telegram..."""
+    totaux = {}
+    for f in fichiers:
+        chemin = f.chemin.lower()
+        for nom in APPLICATIONS_DISCUSSION:
+            if nom in chemin:
+                nombre, taille, images_ = totaux.get(nom, (0, 0, 0))
+                totaux[nom] = (nombre + 1, taille + f.taille,
+                               images_ + (1 if f.categorie == "images" else 0))
+                break
+    return dict(sorted(totaux.items(), key=lambda element: -element[1][1]))
+
+
+def contenant(fichiers, mot):
+    """Fichiers dont le chemin contient ce mot (ex : '20261008', 'VID', 'IMG')."""
+    mot = str(mot).lower()
+    return [f for f in fichiers if mot in f.relatif.lower()]
 
 
 def _lignes(titre, elements):
@@ -216,6 +259,13 @@ def rapport(fichiers, nombre=5):
         f"{formater_taille(f.taille)}  {f.relatif}" for f in plus_gros(fichiers, nombre)
     ])]
 
+    apk = installateurs(fichiers)
+    if apk:
+        sortie += ["", f"📦 Installateurs d'applications (.apk) : {len(apk)} "
+                       f"({formater_taille(taille_totale(apk))})",
+                   "  Une fois l'application installée, on n'en a en général plus besoin :"]
+        sortie += [f"  {formater_taille(f.taille)}  {f.relatif}" for f in apk[:nombre]]
+
     groupes = doublons(fichiers)
     sortie += ["", f"🔁 Doublons : {len(groupes)} groupe(s), "
                    f"{formater_taille(espace_gaspille(groupes))} récupérables"]
@@ -231,13 +281,25 @@ def rapport(fichiers, nombre=5):
     jetables = inutiles(fichiers)
     sortie += ["", f"🗑️  Probablement inutiles (à vérifier) : {len(jetables)} "
                    f"({formater_taille(taille_totale([f for f, _ in jetables]))})"]
-    for f, raison in jetables[:nombre]:
-        sortie.append(f"  {f.relatif} → {raison}")
+    for raison, (n, t) in inutiles_par_raison(fichiers).items():
+        sortie.append(f"  {raison} : {n} fichier(s), {formater_taille(t)}")
+    if jetables:
+        sortie.append("  Les plus lourds :")
+        for f, _ in jetables[:nombre]:
+            sortie.append(f"    {formater_taille(f.taille)}  {f.relatif}")
+    chez_les_applications = [f for f, _ in jetables if appartient_a_une_application(f)]
+    if chez_les_applications:
+        sortie += [f"  ⚠️  {len(chez_les_applications)} fichier(s) dans Android/... : "
+                   "ces dossiers appartiennent aux applications.",
+                   "  Ne les supprime pas à la main : fais-le depuis l'application "
+                   "(ex : WhatsApp > Stockage)."]
 
     chats = discussions(fichiers)
-    images_chats = images(chats)
     sortie += ["", f"💬 Médias des applications de discussion : {len(chats)} fichiers "
-                   f"({formater_taille(taille_totale(chats))}), dont {len(images_chats)} image(s)"]
+                   f"({formater_taille(taille_totale(chats))})"]
+    for application, (n, t, nb_images) in par_application(fichiers).items():
+        sortie.append(f"  {application} : {n} fichiers ({formater_taille(t)}), "
+                      f"dont {nb_images} image(s)")
 
     if _inaccessibles:
         sortie += ["", f"⚠️  {len(_inaccessibles)} dossier(s) non lisibles (permissions) :"]

@@ -1,0 +1,19 @@
+importer disque
+
+choix = saisir("Dossier à analyser (Entrée = ton stockage) : ").nettoyer()
+si choix == "":
+    choix = "~/storage/shared"
+
+trouves = disque.scanner(choix)
+photos = disque.images(disque.discussions(trouves))
+
+mot = saisir("Mot à chercher dans le nom (ex: 20261008, Entrée = tout) : ").nettoyer()
+si mot != "":
+    photos = disque.contenant(photos, mot)
+
+afficher("Images des applications de discussion :", longueur(photos))
+afficher("Taille totale :", disque.formater_taille(disque.taille_totale(photos)))
+afficher("")
+afficher("Les plus lourdes :")
+pour photo dans disque.plus_gros(photos, 10):
+    afficher(" ", disque.formater_taille(photo.taille), photo.relatif)
