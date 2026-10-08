@@ -98,3 +98,9 @@ Un test est une fonction test_... qui utilise le module tests (tests.egal, tests
 ## Commande courte
 
 La commande `bao` fait la même chose que `baobab` (utile si `baobab` existe déjà sur ton ordinateur).
+
+## Analyser ses fichiers
+
+    baobab exemples/analyse_appareil.bao
+
+Le module disque repère les gros fichiers, les doublons, les fichiers anciens et les fichiers probablement inutiles. Il ne supprime rien.
