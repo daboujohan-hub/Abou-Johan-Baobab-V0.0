@@ -1,111 +1,187 @@
-# 🌳 Baobab
+# 🌳 Baobab — Langage de programmation en français
 
-Un langage de programmation **en français**, pensé pour les débutants,
-avec une transition facile vers Python.
+![Logo Baobab 2026](docs/images/baobab-2026.jpg)
 
-Baobab traduit ton code français en Python, puis l'exécute.
-Les erreurs sont expliquées en français, avec des suggestions de correction.
+**Baobab** est un langage de programmation en français, conçu pour aider les débutants à apprendre la logique de programmation avant de passer progressivement à Python.
 
-## Exemple
+Il traduit le code Baobab en Python, puis l’exécute. Les erreurs sont présentées en français, avec des indications pour aider à les comprendre et à les corriger.
 
-    fonction carre(x):
-        retourner x * x
+> Créé par **Aboudev 🇨🇮** — Côte d’Ivoire
 
-    pour i dans intervalle(1, 4):
-        afficher(i, "au carré =", carre(i))
+## ✨ Fonctionnalités
 
-## Utilisation
+- Syntaxe en français : `fonction`, `retourner`, `pour`, `dans`, `afficher`, `importer`.
+- Traduction du code Baobab vers Python.
+- Exécution de programmes `.bao`.
+- Mode interactif pour essayer de petites instructions.
+- Mode explication qui associe les lignes Baobab à leur équivalent Python.
+- Bibliothèques françaises pour les dates, les fichiers, le dessin, les mathématiques, le hasard et le temps.
+- Outils de test pour les programmes et exemples.
+- Analyse de fichiers pour repérer les fichiers volumineux, les doublons et les fichiers anciens, sans les supprimer.
 
-    python -m baobab                                mode interactif
-    python -m baobab lancer exemples/fonctions.bao
-    python -m baobab expliquer exemples/boucles.bao
-    python -m baobab python exemples/boucles.bao
+## 🖼️ Ajouter le logo au dépôt
 
-- `lancer` exécute le programme
-- `expliquer` montre chaque ligne Baobab avec son équivalent Python
-- `python` affiche le code Python généré
+Le README affiche le logo depuis ce chemin :
 
-## Bibliothèque française
+```text
+docs/images/baobab-2026.jpg
+```
 
-    importer dates       date_du_jour(), heure(), difference_en_jours(...), age_depuis(...)
-    importer fichiers    lire(...), ecrire(...), ajouter_ligne(...), existe(...)
-    importer dessin      avancer(...), tourner_droite(...), carre(...), etoile(...), sauvegarder(...)
-    importer mathematiques, hasard, temps
+Crée ce dossier dans le dépôt et place l’image `baobab-2026.jpg` à cet emplacement. Si tu utilises le fichier README fourni ici, conserve exactement ce chemin pour que l’image s’affiche sur GitHub.
 
-Exemple avec le dessin (l'image s'enregistre en .svg, à ouvrir dans un navigateur) :
+## 🚀 Installation
 
-    importer dessin
+Baobab nécessite **Python 3.8 ou une version plus récente**.
 
-    dessin.couleur("red")
-    pour i dans intervalle(12):
-        dessin.etoile(70)
-        dessin.tourner_droite(30)
-    dessin.sauvegarder("etoiles.svg")
+```bash
+git clone https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0.git
+cd Abou-Johan-Baobab-V0.0
+python -m baobab lancer exemples/bonjour.bao
+```
 
-## Installation
+Si Python est déjà installé et que le dépôt est présent sur ton appareil, passe directement dans le dossier du projet avant d’exécuter les commandes.
 
-    git clone https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0.git
-    cd Abou-Johan-Baobab-V0.0
-    python -m baobab lancer exemples/bonjour.bao
+## ▶️ Utilisation
 
-Il faut seulement Python 3.8 ou plus récent.
+### Lancer un programme
 
-## Tests
+```bash
+python -m baobab lancer exemples/fonctions.bao
+```
 
-    python -m unittest discover tests
+### Expliquer un programme
 
-## Structure
+```bash
+python -m baobab expliquer exemples/boucles.bao
+```
 
-    baobab/mots_cles.py       dictionnaire français -> Python
-    baobab/lexeur.py          découpe le code en jetons
-    baobab/transpileur.py     traduit Baobab en Python
-    baobab/erreurs.py         messages d'erreur en français
-    baobab/executeur.py       exécute le code
-    baobab/explication.py     mode explication
-    baobab/repl.py            mode interactif
-    baobab/cli.py             commandes
-    baobab/bibliotheque/      dates, fichiers, dessin
-    exemples/                 programmes d'exemple (.bao)
-    tests/                    tests automatiques
+### Afficher le Python généré
 
-Créé par Aboudev 🇨🇮
+```bash
+python -m baobab python exemples/boucles.bao
+```
 
-## Apprendre
+### Ouvrir le mode interactif
 
-Voir le tutoriel : [docs/tutoriel.md](docs/tutoriel.md)
+```bash
+python -m baobab
+```
 
-## Tester ses applications
+La commande courte `bao` peut également être utilisée si elle est installée et disponible dans le terminal.
 
-    baobab tester              lance tous les fichiers test_*.bao
-    baobab tester exemples     lance les tests d un dossier
+## 🧩 Exemple de code Baobab
 
-Un test est une fonction test_... qui utilise le module tests (tests.egal, tests.contient, tests.requete).
+```python
+fonction carre(x):
+    retourner x * x
 
-## Limites connues
+pour i dans intervalle(1, 4):
+    afficher(i, "au carré =", carre(i))
+```
 
-- Baobab **traduit le français vers Python** : même vitesse, mêmes règles (indentation, `:`). Python doit être installé.
-- Quelques mots avancés de Python n'ont pas encore de version française (`async`, `await`, `match`...). Ils fonctionnent quand même, en anglais.
-- Le mélange français/anglais est accepté, ce qui est pratique mais peut donner de mauvaises habitudes.
-- Si tu définis dans un fichier `.bao` une méthode qui porte le nom d'une méthode de liste ou de texte (`ajouter`, `trier`, `separer`...) et que tu l'appelles depuis un **autre** fichier, Baobab la traduira à tort.
-- Les erreurs de syntaxe restent assez générales.
-- Le module `serveur` sert à apprendre : pas de HTTPS, pas de comptes, pas de base de données, pas d'anti-spam. Ne l'expose pas tel quel sur Internet.
-- Baobab exécute n'importe quel code sans protection : ne lance jamais le code d'un inconnu.
-- Les tâches du module `taches` s'arrêtent avec le programme (sur téléphone, Android peut mettre Termux en pause).
-- Le module `dessin` produit des images SVG, pas d'animation.
-- Testé surtout sous Android (Termux) et Linux, avec un Python récent. Pas encore testé sous Windows ni macOS.
-- Pas d'éditeur avec couleurs ni de débogueur pour l'instant.
+Ce programme calcule le carré des nombres de 1 à 3 et affiche le résultat.
 
-## Commande courte
+## 📚 Bibliothèques françaises
 
-La commande `bao` fait la même chose que `baobab` (utile si `baobab` existe déjà sur ton ordinateur).
+| Bibliothèque | Exemples de fonctions |
+|---|---|
+| `dates` | `date_du_jour()`, `heure()`, `difference_en_jours(...)`, `age_depuis(...)` |
+| `fichiers` | `lire(...)`, `ecrire(...)`, `ajouter_ligne(...)`, `existe(...)` |
+| `dessin` | `avancer(...)`, `tourner_droite(...)`, `carre(...)`, `etoile(...)`, `sauvegarder(...)` |
+| `mathematiques` | Fonctions mathématiques |
+| `hasard` | Opérations aléatoires |
+| `temps` | Fonctions liées au temps |
+| `base` | Outils pour ouvrir, interroger et modifier une base de données |
+| `donnees` | Lecture et écriture JSON et CSV |
 
-## Analyser ses fichiers
+### Exemple : dessiner une étoile en répétition
 
-    baobab exemples/analyse_appareil.bao
+```python
+importer dessin
 
-Le module disque repère les gros fichiers, les doublons, les fichiers anciens et les fichiers probablement inutiles. Il ne supprime rien.
+dessin.couleur("red")
 
-## Bases de données et fichiers de données
+pour i dans intervalle(12):
+    dessin.etoile(70)
+    dessin.tourner_droite(30)
 
-    importer base       ouvrir, executer, chercher, inserer, tables, fermer
-    importer donnees    lire_json, ecrire_json, lire_csv, ecrire_csv, vers_json, depuis_json
+dessin.sauvegarder("etoiles.svg")
+```
+
+Le dessin est enregistré au format **SVG**. Ouvre le fichier dans un navigateur pour le visualiser.
+
+## 🧪 Tests
+
+Lancer les tests Python du projet :
+
+```bash
+python -m unittest discover tests
+```
+
+Baobab propose également des commandes de test pour les fichiers `.bao` :
+
+```bash
+baobab tester
+baobab tester exemples
+```
+
+Un test Baobab utilise une fonction dont le nom commence par `test_` et les outils du module `tests`, par exemple `tests.egal`, `tests.contient` ou `tests.requete`.
+
+## 🔍 Analyser des fichiers
+
+```bash
+baobab exemples/analyse_appareil.bao
+```
+
+Le module d’analyse peut repérer les gros fichiers, les doublons, les fichiers anciens et les fichiers probablement inutiles. **Il ne supprime rien automatiquement.**
+
+## 🗂️ Structure du projet
+
+```text
+baobab/
+├── mots_cles.py          # Dictionnaire français vers Python
+├── lexeur.py             # Découpe le code en jetons
+├── transpileur.py        # Traduit Baobab en Python
+├── erreurs.py            # Messages d’erreur en français
+├── executeur.py          # Exécution des programmes
+├── explication.py        # Mode explication
+├── repl.py               # Mode interactif
+├── cli.py                # Commandes du terminal
+└── bibliotheque/         # Bibliothèques intégrées
+
+exemples/                 # Programmes d’exemple (.bao)
+tests/                    # Tests automatiques
+docs/
+├── images/
+│   └── baobab-2026.jpg   # Logo du projet
+└── tutoriel.md           # Tutoriel d’apprentissage
+```
+
+## 📖 Apprendre Baobab
+
+Consulte le tutoriel : [`docs/tutoriel.md`](docs/tutoriel.md).
+
+## ⚠️ Limites et sécurité
+
+- Baobab traduit le français vers Python : l’indentation et certaines règles de Python restent nécessaires.
+- Certains mots avancés de Python, comme `async`, `await` et `match`, n’ont pas encore de traduction française dédiée.
+- Le mélange de mots français et anglais est accepté.
+- Certaines erreurs de syntaxe peuvent encore produire des messages généraux.
+- Le module `serveur` est destiné à l’apprentissage : il ne fournit pas à lui seul HTTPS, comptes utilisateurs, base de données ou protection anti-spam. **Ne l’expose pas directement sur Internet.**
+- Baobab exécute le code qu’on lui donne. **N’exécute pas les programmes d’une personne inconnue ou non fiable.**
+- Les tâches du module `taches` s’arrêtent avec le programme. Sur Android, Termux peut aussi être mis en pause par le système.
+- Le module `dessin` produit des images SVG, pas des animations.
+- Le projet a surtout été testé sous Android (Termux) et Linux. Windows et macOS ne sont pas encore validés.
+- Il n’y a pas encore d’éditeur avec coloration syntaxique ni de débogueur intégré.
+
+## 🤝 Contribution
+
+Les améliorations, exemples, tests et propositions de nouvelles instructions françaises peuvent aider Baobab à progresser. Avant de proposer une modification, vérifie les tests et décris clairement ce qui a changé.
+
+## 📄 Licence
+
+Ajoute ici la licence choisie pour le projet, par exemple un fichier `LICENSE` à la racine du dépôt. Ne revendique pas une licence tant qu’elle n’a pas été choisie et ajoutée.
+
+---
+
+**Baobab 2026** — apprendre la programmation en français, étape par étape. 🌳
