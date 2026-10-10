@@ -12,3 +12,13 @@ notes.db
 test_notes.db
 eleves.json
 eleves.csv
+__pycache__/
+*.pyc
+docteur*
+*.avant_*
+patch_*.py
+controle.sh
+installer.sh
+LISEZ-MOI.txt
+carte.bao
+jeeue.bao
