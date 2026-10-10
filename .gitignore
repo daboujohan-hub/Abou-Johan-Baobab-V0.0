@@ -22,3 +22,5 @@ installer.sh
 LISEZ-MOI.txt
 carte.bao
 jeeue.bao
+build/
+dist/
