@@ -185,3 +185,5 @@ Ajoute ici la licence choisie pour le projet, par exemple un fichier `LICENSE` �
 ---
 
 **Baobab 2026** — apprendre la programmation en français, étape par étape. 🌳
+
+    importer statistiques   moyenne, mediane, ecart_type, pourcentage, frequences

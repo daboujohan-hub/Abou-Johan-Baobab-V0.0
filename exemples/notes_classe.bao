@@ -1,0 +1,13 @@
+importer statistiques
+
+# Les notes de la classe (tu peux changer les chiffres !)
+notes = [12, 15, 9, 14, 15, 18, 7, 15, 11, 13]
+
+afficher("Moyenne :", arrondir(statistiques.moyenne(notes), 2))
+afficher("Médiane :", statistiques.mediane(notes))
+afficher("Écart type :", arrondir(statistiques.ecart_type(notes), 2))
+
+admis = longueur([n pour n dans notes si n >= 10])
+afficher("Admis :", admis, "sur", longueur(notes), "soit", statistiques.pourcentage(admis, longueur(notes)), "%")
+
+afficher("Notes les plus fréquentes :", statistiques.frequences(notes))
