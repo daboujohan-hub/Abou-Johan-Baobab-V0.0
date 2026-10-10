@@ -1,0 +1,15 @@
+importer reseau
+
+adresse = "https://www.python.org"
+parametres = reseau.encoder_adresse({"q": "baobab français"})
+afficher("Adresse avec paramètres :", adresse + "/search/?" + parametres)
+
+si reseau.est_en_ligne(adresse):
+    afficher("✅", adresse, "répond")
+    essayer:
+        infos = reseau.telecharger_json("https://api.github.com/repos/python/cpython")
+        afficher("Projet :", infos["full_name"], "- langage :", infos["language"])
+    sauf Erreur comme erreur:
+        afficher("Impossible de lire l'API :", erreur)
+sinon:
+    afficher("❌ Pas de connexion à", adresse)
