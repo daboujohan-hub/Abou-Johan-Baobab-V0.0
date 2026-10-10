@@ -1,0 +1,9 @@
+importer donnees
+
+eleves = [{"nom": "Awa", "note": 15}, {"nom": "Koffi", "note": 12}]
+donnees.ecrire_json("eleves.json", eleves)
+donnees.ecrire_csv("eleves.csv", eleves, ";")
+
+afficher("JSON relu :", donnees.lire_json("eleves.json"))
+afficher("CSV relu :", donnees.lire_csv("eleves.csv", ";"))
+afficher("En texte :", donnees.vers_json(eleves[0]))

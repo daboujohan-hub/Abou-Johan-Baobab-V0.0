@@ -1,0 +1,458 @@
+importer os
+importer json
+importer shutil
+importer subprocess
+importer sys
+importer temps
+
+essayer:
+    depuis cryptography.fernet importer Fernet
+    CHIFFREMENT_OK = vrai
+sauf Erreur:
+    CHIFFREMENT_OK = faux
+
+MAISON = os.path.expanduser("~")
+DOSSIER_DOCTEUR = MAISON + "/DOCTEUR"
+DOSSIER_DOWNLOAD = MAISON + "/storage/shared/Download"
+DOSSIER_SAUVEGARDES = DOSSIER_DOCTEUR + "/sauvegardes"
+DOSSIER_RAPPORTS = DOSSIER_DOCTEUR + "/rapports"
+FICHIER_ETAT = DOSSIER_DOCTEUR + "/docteur.etat.json"
+FICHIER_VIVANT = DOSSIER_DOCTEUR + "/docteur.vivant"
+FICHIER_SILENCE = DOSSIER_DOCTEUR + "/silence.txt"
+FICHIER_DND = DOSSIER_DOCTEUR + "/ne_pas_deranger.txt"
+FICHIER_JOURNAL = DOSSIER_DOCTEUR + "/docteur.log"
+FICHIER_CSV = DOSSIER_DOCTEUR + "/historique.csv"
+FICHIER_CSV_RESEAU = DOSSIER_DOCTEUR + "/reseau.csv"
+FICHIER_REGLAGES = DOSSIER_DOCTEUR + "/reglages.json"
+FICHIER_DOUBLONS = DOSSIER_DOCTEUR + "/doublons.json"
+FICHIER_APPAREILS = DOSSIER_DOCTEUR + "/appareils_connus.json"
+FICHIER_CLE = DOSSIER_DOCTEUR + "/cle.key"
+FICHIER_GARDE = DOSSIER_DOCTEUR + "/garde.txt"
+
+os.makedirs(DOSSIER_DOCTEUR, exist_ok=vrai)
+
+fonction lire_nombre(chemin):
+    essayer:
+        avec ouvrir(chemin) comme f:
+            retourner decimal(f.read().nettoyer())
+    sauf Erreur:
+        retourner 0
+
+fonction lire_json(chemin, defaut):
+    essayer:
+        avec ouvrir(chemin, encoding="utf-8") comme f:
+            retourner json.load(f)
+    sauf Erreur:
+        retourner defaut
+
+fonction etiquette_score(score):
+    si score >= 80:
+        retourner "bon"
+    sinonsi score >= 50:
+        retourner "moyen"
+    retourner "mauvais"
+
+fonction dernieres_lignes(chemin, combien):
+    essayer:
+        avec ouvrir(chemin, encoding="utf-8", errors="ignore") comme f:
+            lignes = f.readlines()
+        retourner lignes[-combien:]
+    sauf Erreur:
+        retourner []
+
+fonction demander_minutes(question):
+    texte = saisir(question).nettoyer()
+    essayer:
+        retourner entier(texte)
+    sauf ErreurValeur:
+        afficher("Tape un nombre.")
+        retourner rien
+
+fonction empreinte_requise():
+    reglages = lire_json(FICHIER_REGLAGES, {})
+    retourner reglages.get("EMPREINTE", 1) == 1
+
+fonction exiger_empreinte(raison):
+    si non empreinte_requise():
+        retourner vrai
+    afficher("👆 Pose ton doigt sur le capteur :", raison)
+    pour options dans [["-t", "Docteur", "-d", raison], []]:
+        essayer:
+            r = subprocess.run(["termux-fingerprint"] + options, capture_output=vrai, text=vrai, timeout=60)
+            donnees = json.loads(r.stdout)
+        sauf FichierIntrouvable:
+            afficher("❌ termux-api est absent : installe-le avec pkg install termux-api")
+            retourner faux
+        sauf Erreur:
+            continuer
+        si donnees.get("auth_result") == "AUTH_RESULT_SUCCESS":
+            afficher("✅ Empreinte reconnue")
+            retourner vrai
+        afficher("❌ Empreinte refusée ou annulée : action bloquée.")
+        retourner faux
+    afficher("❌ Le lecteur d'empreinte ne répond pas. Vérifie que l'application Termux:API est installée et qu'une empreinte est enregistrée dans Android.")
+    afficher("   Pour désactiver cette protection : mets EMPREINTE à 0 dans ~/DOCTEUR/reglages.json")
+    retourner faux
+
+fonction etat_docteur():
+    age = temps.maintenant() - lire_nombre(FICHIER_VIVANT)
+    si age < 180:
+        afficher("🟢 Le Docteur tourne (signe de vie il y a", entier(age), "secondes)")
+    sinon:
+        afficher("🔴 Le Docteur ne semble pas actif. Lance-le : nohup baobab lancer docteur4.bao >> ~/DOCTEUR/docteur.out 2>&1 &")
+    fin_silence = lire_nombre(FICHIER_SILENCE)
+    si fin_silence > temps.maintenant():
+        afficher("🔇 Mode silence encore", entier((fin_silence - temps.maintenant()) / 60), "minutes")
+    fin_dnd = lire_nombre(FICHIER_DND)
+    si fin_dnd > temps.maintenant():
+        afficher("⛔ Ne pas déranger encore", entier((fin_dnd - temps.maintenant()) / 60), "minutes")
+
+fonction commande_bilan():
+    etat_docteur()
+    etat = lire_json(FICHIER_ETAT, rien)
+    si etat == rien:
+        afficher("Pas encore de bilan : attends une minute que le Docteur le prépare.")
+        retourner
+    score = etat["score"]
+    afficher("Score de santé :", score, "/100 (" + etiquette_score(score) + ")")
+    pour r dans etat["raisons"]:
+        afficher("  -", r)
+    bat = etat["batterie"]
+    si bat != rien:
+        afficher("Batterie :", bat["percentage"], "% |", bat["status"], "|", bat["temperature"], "°C | santé", bat["health"])
+    si etat.get("autonomie_h") != rien:
+        afficher("Autonomie estimée :", etat["autonomie_h"], "heure(s)")
+    si etat["ram_libre"] != rien:
+        afficher("Mémoire libre :", etat["ram_libre"], "%")
+    afficher("Stockage utilisé :", etat["stockage"], "%")
+    si etat.get("wifi") != rien:
+        afficher("Wi-Fi :", etat["wifi"])
+    si etat.get("latence_ms") != rien:
+        afficher("Latence Internet :", etat["latence_ms"], "ms")
+    si etat.get("debit_mbps") != rien:
+        afficher("Débit :", etat["debit_mbps"], "Mbit/s")
+    afficher("Alertes depuis le dernier rapport :", etat["alertes"])
+    afficher("Mesuré à", etat["heure"])
+
+fonction afficher_dernier(motif):
+    si non os.path.exists(DOSSIER_RAPPORTS):
+        afficher("Aucun rapport pour l'instant.")
+        retourner
+    noms = []
+    pour nom dans os.listdir(DOSSIER_RAPPORTS):
+        si nom.startswith(motif):
+            noms.ajouter(nom)
+    si longueur(noms) == 0:
+        afficher("Aucun rapport de ce type pour l'instant.")
+        retourner
+    noms.trier()
+    avec ouvrir(DOSSIER_RAPPORTS + "/" + noms[-1], encoding="utf-8") comme f:
+        afficher(f.read())
+
+fonction commande_rapport():
+    afficher_dernier("rapport_")
+
+fonction commande_semaine():
+    afficher_dernier("semaine_")
+
+fonction commande_journal():
+    afficher("--- 15 dernières lignes du journal ---")
+    pour ligne dans dernieres_lignes(FICHIER_JOURNAL, 15):
+        afficher(ligne.nettoyer())
+
+fonction commande_mesures():
+    afficher("--- 10 dernières mesures (date, batterie, température, état, RAM, stockage, score) ---")
+    pour ligne dans dernieres_lignes(FICHIER_CSV, 10):
+        afficher(ligne.nettoyer())
+    afficher("--- 5 dernières mesures réseau (date, latence ms, débit Mbit/s, wifi) ---")
+    pour ligne dans dernieres_lignes(FICHIER_CSV_RESEAU, 5):
+        afficher(ligne.nettoyer())
+
+fonction commande_silence():
+    minutes = demander_minutes("Combien de minutes de silence (plus de voix) ? 0 = remettre le son : ")
+    si minutes == rien:
+        retourner
+    si minutes <= 0:
+        si os.path.exists(FICHIER_SILENCE):
+            os.remove(FICHIER_SILENCE)
+        afficher("🔊 Silence terminé")
+    sinon:
+        avec ouvrir(FICHIER_SILENCE, "w") comme f:
+            f.write(chaine(temps.maintenant() + minutes * 60))
+        afficher("🔇 Silence pendant", minutes, "minutes. Les alertes graves restent notifiées.")
+
+fonction commande_dnd():
+    minutes = demander_minutes("Ne pas déranger : combien de minutes ? 0 = désactiver : ")
+    si minutes == rien:
+        retourner
+    si minutes <= 0:
+        si os.path.exists(FICHIER_DND):
+            os.remove(FICHIER_DND)
+        afficher("✅ Ne pas déranger désactivé")
+    sinon:
+        avec ouvrir(FICHIER_DND, "w") comme f:
+            f.write(chaine(temps.maintenant() + minutes * 60))
+        afficher("⛔ Ne pas déranger pendant", minutes, "minutes : ni voix ni vibration, seulement les alertes graves en notification silencieuse. Tout reste écrit dans le journal.")
+
+fonction commande_reglages():
+    reglages = lire_json(FICHIER_REGLAGES, rien)
+    si reglages == rien:
+        afficher("Pas de fichier de réglages : lance le Docteur une fois.")
+        retourner
+    pour cle dans reglages:
+        afficher(" ", cle, "=", reglages[cle])
+    nom_reglage = saisir("Réglage à changer (Entrée = aucun) : ").nettoyer()
+    si nom_reglage == "":
+        retourner
+    si nom_reglage non dans reglages:
+        afficher("Ce réglage n'existe pas.")
+        retourner
+    essayer:
+        valeur = decimal(saisir("Nouvelle valeur : "))
+        si valeur == entier(valeur):
+            valeur = entier(valeur)
+    sauf Erreur:
+        afficher("Tape un nombre valide.")
+        retourner
+    si non exiger_empreinte("Changer un réglage"):
+        retourner
+    reglages[nom_reglage] = valeur
+    avec ouvrir(FICHIER_REGLAGES, "w", encoding="utf-8") comme f:
+        json.dump(reglages, f, indent=2)
+    afficher("✅ Enregistré. Le Docteur le prendra en compte d'ici une minute.")
+
+fonction commande_habitudes():
+    etat = lire_json(FICHIER_ETAT, rien)
+    si etat == rien ou "conseils" non dans etat:
+        afficher("Pas encore de données : le Docteur doit observer quelques charges.")
+        retourner
+    afficher("--- Tes habitudes de charge ---")
+    pour conseil dans etat["conseils"]:
+        afficher("-", conseil)
+
+fonction commande_nettoyage():
+    candidats = []
+    si os.path.exists(DOSSIER_DOWNLOAD):
+        pour racine, sous_dossiers, noms dans os.walk(DOSSIER_DOWNLOAD):
+            pour nom dans noms:
+                si nom.endswith(".apk") ou nom.endswith(".tmp") ou nom.endswith(".crdownload"):
+                    chemin = os.path.join(racine, nom)
+                    essayer:
+                        candidats.ajouter((os.path.getsize(chemin), chemin))
+                    sauf Erreur:
+                        passer
+    si longueur(candidats) == 0:
+        afficher("✅ Rien à nettoyer dans Download (.apk, .tmp, .crdownload).")
+        retourner
+    candidats.trier(reverse=vrai)
+    pour i, c dans enumerer(candidats):
+        afficher(i + 1, "-", arrondir(c[0] / 1000000, 1), "Mo", c[1])
+    afficher("Les fichiers de WhatsApp (Android/media) ne sont pas listés : vide-les depuis WhatsApp, Stockage et données.")
+    reponse = saisir("Numéros à supprimer (ex : 1 3), 'tout', ou Entrée pour annuler : ").nettoyer()
+    choisis = []
+    si reponse == "tout":
+        choisis = candidats
+    sinon:
+        pour morceau dans reponse.separer():
+            essayer:
+                n = entier(morceau)
+            sauf ErreurValeur:
+                continuer
+            si 1 <= n et n <= longueur(candidats):
+                choisis.ajouter(candidats[n - 1])
+    si longueur(choisis) == 0:
+        afficher("Rien supprimé.")
+        retourner
+    total_o = 0
+    pour c dans choisis:
+        total_o = total_o + c[0]
+    afficher("Tu vas supprimer", longueur(choisis), "fichier(s), environ", arrondir(total_o / 1000000, 1), "Mo. C'est définitif.")
+    si saisir("Tape OUI pour confirmer : ").nettoyer() != "OUI":
+        afficher("Annulé, rien n'a été supprimé.")
+        retourner
+    si non exiger_empreinte("Supprimer des fichiers"):
+        retourner
+    supprimes = 0
+    pour c dans choisis:
+        si c[1].startswith(DOSSIER_DOWNLOAD + "/"):
+            essayer:
+                os.remove(c[1])
+                supprimes = supprimes + 1
+            sauf Erreur comme e:
+                afficher("Impossible :", c[1], e)
+    afficher("✅", supprimes, "fichier(s) supprimé(s).")
+
+fonction commande_doublons():
+    groupes = lire_json(FICHIER_DOUBLONS, [])
+    si longueur(groupes) == 0:
+        afficher("Aucun doublon connu (le Docteur les cherche toutes les 6 heures).")
+        retourner
+    pour i, g dans enumerer(groupes[:15]):
+        afficher(i + 1, "-", longueur(g["copies"]), "copies de", arrondir(g["taille"] / 1000000, 2), "Mo")
+        pour c dans g["copies"]:
+            afficher("      ", c)
+    afficher("Seules les copies dans Download peuvent être supprimées ici (la première copie est gardée).")
+    reponse = saisir("Numéros de groupes à nettoyer (ex : 1 2), ou Entrée pour annuler : ").nettoyer()
+    cibles = []
+    pour morceau dans reponse.separer():
+        essayer:
+            n = entier(morceau)
+        sauf ErreurValeur:
+            continuer
+        si 1 <= n et n <= longueur(groupes[:15]):
+            pour c dans groupes[n - 1]["copies"][1:]:
+                si c.startswith(DOSSIER_DOWNLOAD + "/") et os.path.exists(c):
+                    cibles.ajouter(c)
+    si longueur(cibles) == 0:
+        afficher("Rien à supprimer.")
+        retourner
+    pour c dans cibles:
+        afficher("  à supprimer :", c)
+    si saisir("Tape OUI pour confirmer : ").nettoyer() != "OUI":
+        afficher("Annulé, rien n'a été supprimé.")
+        retourner
+    si non exiger_empreinte("Supprimer des doublons"):
+        retourner
+    pour c dans cibles:
+        essayer:
+            os.remove(c)
+        sauf Erreur comme e:
+            afficher("Impossible :", c, e)
+    afficher("✅", longueur(cibles), "doublon(s) supprimé(s).")
+
+fonction commande_appareils():
+    connus = lire_json(FICHIER_APPAREILS, {})
+    si longueur(connus) == 0:
+        afficher("Pas encore de scan. Il faut être en Wi-Fi et avoir installé nmap : pkg install nmap")
+        retourner
+    pour reseau, adresses dans connus.elements():
+        afficher("Réseau", reseau, ":", longueur(adresses), "appareils connus")
+        pour a dans adresses:
+            afficher("  -", a)
+    afficher("Pour repartir de zéro, supprime : ~/DOCTEUR/appareils_connus.json")
+
+fonction commande_restaurer():
+    si non os.path.exists(DOSSIER_SAUVEGARDES):
+        afficher("Aucune sauvegarde pour l'instant.")
+        retourner
+    noms = trier(os.listdir(DOSSIER_SAUVEGARDES))
+    si longueur(noms) == 0:
+        afficher("Aucune sauvegarde pour l'instant.")
+        retourner
+    pour i, nom dans enumerer(noms):
+        afficher(i + 1, "-", nom)
+    reponse = saisir("Numéro de la sauvegarde à restaurer (Entrée = annuler) : ").nettoyer()
+    essayer:
+        n = entier(reponse)
+    sauf ErreurValeur:
+        afficher("Annulé.")
+        retourner
+    si n < 1 ou n > longueur(noms):
+        afficher("Numéro inconnu.")
+        retourner
+    nom = noms[n - 1]
+    chemin = DOSSIER_SAUVEGARDES + "/" + nom
+    si os.path.isdir(chemin):
+        afficher("Cette sauvegarde n'est pas chiffrée, elle est directement ici :", chemin)
+        retourner
+    si non CHIFFREMENT_OK:
+        afficher("Le module cryptography manque : pip install cryptography")
+        retourner
+    si non os.path.exists(FICHIER_CLE):
+        afficher("La clé", FICHIER_CLE, "est introuvable : impossible de déchiffrer.")
+        retourner
+    si non exiger_empreinte("Restaurer une sauvegarde"):
+        retourner
+    sortie = DOSSIER_DOCTEUR + "/restauration/" + nom.replace(".tar.gz.enc", "")
+    essayer:
+        avec ouvrir(FICHIER_CLE, "rb") comme f:
+            cle = f.read()
+        avec ouvrir(chemin, "rb") comme f:
+            secret = f.read()
+        donnees = Fernet(cle).decrypt(secret)
+        os.makedirs(sortie, exist_ok=vrai)
+        archive = sortie + ".tar.gz"
+        avec ouvrir(archive, "wb") comme f:
+            f.write(donnees)
+        shutil.unpack_archive(archive, sortie)
+        os.remove(archive)
+        afficher("✅ Sauvegarde restaurée dans", sortie)
+        afficher("Rien n'a été remplacé : copie toi-même ce dont tu as besoin.")
+    sauf Erreur comme e:
+        afficher("❌ Échec de la restauration :", e)
+
+fonction commande_garde():
+    fin = lire_nombre(FICHIER_GARDE)
+    si fin > temps.maintenant():
+        afficher("🛡️ Garde du chargeur active encore", entier((fin - temps.maintenant()) / 60), "minutes")
+        si saisir("Tape STOP pour la désactiver (Entrée = la laisser) : ").nettoyer() == "STOP":
+            si exiger_empreinte("Désactiver la garde du chargeur"):
+                os.remove(FICHIER_GARDE)
+                afficher("✅ Garde désactivée")
+        retourner
+    afficher("La garde se déclenche seulement si le chargeur est débranché alors que le téléphone était en charge.")
+    afficher("Branche d'abord le chargeur. Une alarme vocale forte retentit, sur ce téléphone seulement.")
+    minutes = demander_minutes("Garde pendant combien de minutes ? (0 = annuler) : ")
+    si minutes == rien ou minutes <= 0:
+        afficher("Annulé.")
+        retourner
+    avec ouvrir(FICHIER_GARDE, "w") comme f:
+        f.write(chaine(temps.maintenant() + minutes * 60))
+    afficher("🛡️ Garde active pendant", minutes, "minutes. Désactive-la ici avec STOP quand tu reviens.")
+
+reglages_menu = lire_json(FICHIER_REGLAGES, {})
+si reglages_menu.get("EMPREINTE_MENU", 1) == 1 et reglages_menu.get("EMPREINTE", 1) == 1:
+    acces = faux
+    pour essai dans intervalle(3):
+        si exiger_empreinte("Ouvrir le menu du Docteur"):
+            acces = vrai
+            arreter
+        afficher("Essai", essai + 1, "sur 3")
+    si non acces:
+        afficher("🔒 Menu verrouillé. Accès refusé.")
+        sys.exit(1)
+
+afficher("🩺 Menu du Docteur")
+essayer:
+    tantque vrai:
+        afficher("")
+        afficher("1 Bilan       2 Rapport du jour   3 Rapport semaine   4 Journal")
+        afficher("5 Mesures    6 Silence (voix)    7 Ne pas déranger   8 Réglages")
+        afficher("9 Habitudes de charge   10 Nettoyage assisté   11 Doublons")
+        afficher("12 Appareils du Wi-Fi   13 Restaurer une sauvegarde   14 Garde du chargeur   0 Quitter")
+        choix = saisir("Ton choix : ").nettoyer()
+        si choix == "1":
+            commande_bilan()
+        sinonsi choix == "2":
+            commande_rapport()
+        sinonsi choix == "3":
+            commande_semaine()
+        sinonsi choix == "4":
+            commande_journal()
+        sinonsi choix == "5":
+            commande_mesures()
+        sinonsi choix == "6":
+            commande_silence()
+        sinonsi choix == "7":
+            commande_dnd()
+        sinonsi choix == "8":
+            commande_reglages()
+        sinonsi choix == "9":
+            commande_habitudes()
+        sinonsi choix == "10":
+            commande_nettoyage()
+        sinonsi choix == "11":
+            commande_doublons()
+        sinonsi choix == "12":
+            commande_appareils()
+        sinonsi choix == "13":
+            commande_restaurer()
+        sinonsi choix == "14":
+            commande_garde()
+        sinonsi choix == "0":
+            arreter
+        sinon:
+            afficher("Choix inconnu")
+sauf (KeyboardInterrupt, EOFError):
+    passer
+afficher("Au revoir 🩺")

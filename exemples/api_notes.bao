@@ -1,0 +1,31 @@
+importer serveur
+importer sqlite3
+
+BASE = "notes.db"
+
+fonction ouvrir_base():
+    connexion = sqlite3.connect(BASE)
+    connexion.execute("CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, texte TEXT NOT NULL)")
+    retourner connexion
+
+fonction liste_des_notes():
+    connexion = ouvrir_base()
+    lignes = connexion.execute("SELECT id, texte FROM notes ORDER BY id").fetchall()
+    connexion.close()
+    retourner [{"id": l[0], "texte": l[1]} pour l dans lignes]
+
+fonction ajouter_note(parametres):
+    texte = parametres.obtenir("texte", "").nettoyer()[:200]
+    si texte == "":
+        retourner {"erreur": "texte vide"}
+    connexion = ouvrir_base()
+    connexion.execute("INSERT INTO notes (texte) VALUES (?)", (texte,))
+    connexion.commit()
+    connexion.close()
+    retourner serveur.rediriger("/notes")
+
+serveur.route("/notes", liste_des_notes)
+serveur.route("/notes/ajouter", ajouter_note)
+
+si programme_principal:
+    serveur.demarrer(8000)

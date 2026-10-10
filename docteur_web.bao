@@ -1,0 +1,62 @@
+importer serveur
+importer json
+importer os
+
+FICHIER_ETAT = os.path.expanduser("~/DOCTEUR/docteur.etat.json")
+
+fonction lire_etat():
+    essayer:
+        avec ouvrir(FICHIER_ETAT, encoding="utf-8") comme f:
+            retourner json.load(f)
+    sauf Erreur:
+        retourner rien
+
+fonction ligne_info(nom, valeur):
+    si valeur == rien:
+        retourner ""
+    retourner "<p><b>" + serveur.echapper(nom) + " :</b> " + serveur.echapper(chaine(valeur)) + "</p>"
+
+fonction page_etat():
+    etat = lire_etat()
+    si etat == rien:
+        retourner serveur.page("Docteur", "<h1>🩺 Pas encore de données</h1><p>Le Docteur n'a pas encore écrit son bilan. Réessaie dans une minute.</p>")
+    score = etat["score"]
+    couleur = "green"
+    si score < 50:
+        couleur = "red"
+    sinonsi score < 80:
+        couleur = "orange"
+    contenu = "<meta http-equiv='refresh' content='30'>"
+    contenu = contenu + "<h1>🩺 Docteur Appareil</h1>"
+    contenu = contenu + "<h2 style='color:" + couleur + "'>Score : " + chaine(score) + " / 100</h2>"
+    pour r dans etat["raisons"]:
+        contenu = contenu + "<p>- " + serveur.echapper(r) + "</p>"
+    bat = etat["batterie"]
+    si bat != rien:
+        contenu = contenu + ligne_info("Batterie", chaine(bat["percentage"]) + " % (" + chaine(bat["status"]) + "), " + chaine(bat["temperature"]) + " °C")
+    contenu = contenu + ligne_info("Autonomie estimée (heures)", etat.get("autonomie_h"))
+    contenu = contenu + ligne_info("Mémoire libre (%)", etat.get("ram_libre"))
+    contenu = contenu + ligne_info("Stockage utilisé (%)", etat.get("stockage"))
+    contenu = contenu + ligne_info("Wi-Fi", etat.get("wifi"))
+    contenu = contenu + ligne_info("Latence (ms)", etat.get("latence_ms"))
+    contenu = contenu + ligne_info("Débit (Mbit/s)", etat.get("debit_mbps"))
+    contenu = contenu + ligne_info("Alertes depuis le dernier rapport", etat.get("alertes"))
+    contenu = contenu + "<h3>Habitudes de charge</h3>"
+    pour conseil dans etat.get("conseils", []):
+        contenu = contenu + "<p>- " + serveur.echapper(conseil) + "</p>"
+    contenu = contenu + "<p><small>Mesuré à " + serveur.echapper(chaine(etat["heure"])) + " - la page se met à jour toute seule</small></p>"
+    contenu = contenu + "<p><a href='/api'>Données brutes (API)</a></p>"
+    retourner serveur.page("Docteur Appareil", contenu)
+
+fonction donnees():
+    etat = lire_etat()
+    si etat == rien:
+        retourner {"erreur": "pas encore de données"}
+    retourner etat
+
+serveur.route("/", page_etat)
+serveur.route("/etat", page_etat)
+serveur.route("/api", donnees)
+
+afficher("Page du Docteur sur http://localhost:8765/etat (seulement sur ce téléphone)")
+serveur.demarrer(8765, "127.0.0.1")

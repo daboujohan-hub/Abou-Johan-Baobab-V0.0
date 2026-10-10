@@ -104,3 +104,8 @@ La commande `bao` fait la même chose que `baobab` (utile si `baobab` existe dé
     baobab exemples/analyse_appareil.bao
 
 Le module disque repère les gros fichiers, les doublons, les fichiers anciens et les fichiers probablement inutiles. Il ne supprime rien.
+
+## Bases de données et fichiers de données
+
+    importer base       ouvrir, executer, chercher, inserer, tables, fermer
+    importer donnees    lire_json, ecrire_json, lire_csv, ecrire_csv, vers_json, depuis_json

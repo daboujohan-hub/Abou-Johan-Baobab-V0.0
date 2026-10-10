@@ -50,28 +50,46 @@ def _noms_du_programmeur(jetons):
     return noms
 
 
+def _est_natif(mot_module):
+    """Un module Baobab (dates, base, serveur...) : ses noms sont déjà en français."""
+    return MODULES[mot_module].startswith("baobab_")
+
+
 def _analyser(jetons):
-    """Première passe : fonctions définies, modules importés, noms du programmeur."""
+    """Première passe : fonctions définies, modules importés, noms du programmeur.
+
+    'natifs' = les noms (et alias) des modules Baobab : après leur point,
+    aucun mot n'est traduit (base.inserer reste base.inserer).
+    """
     definis = set()
     modules = set()
+    natifs = set()
     ligne_import = False
+    dernier_module = None
     precedent = ""
     for type_jeton, valeur in jetons:
         if type_jeton == "AUTRE" and "\n" in valeur:
             ligne_import = False
+            dernier_module = None
         if type_jeton == "MOT":
             if valeur in ("importer", "depuis"):
                 ligne_import = True
             elif ligne_import and valeur in MODULES:
                 modules.add(valeur)
+                dernier_module = valeur
+                if _est_natif(valeur):
+                    natifs.add(valeur)
+            elif (ligne_import and precedent == "comme"
+                    and dernier_module and _est_natif(dernier_module)):
+                natifs.add(valeur)  # importer base comme b
             if precedent == "fonction" and valeur not in MOTS_CLES:
                 definis.add(valeur)
         if not valeur.isspace():
             precedent = valeur
-    return definis, modules, _noms_du_programmeur(jetons)
+    return definis, modules, natifs, _noms_du_programmeur(jetons)
 
 
-def _traduire_fstring(texte, definis, modules, noms):
+def _traduire_fstring(texte, contexte):
     """Traduit aussi le code écrit entre accolades dans un f"...".
 
     Exemple : f"Il y a {longueur(x)} éléments"
@@ -104,14 +122,17 @@ def _traduire_fstring(texte, definis, modules, noms):
                 resultat.append(texte[i:])
                 break
             interieur = texte[i + 1:j - 1]
-            resultat.append("{" + _traduire(interieur, definis, modules, noms) + "}")
+            resultat.append("{" + _traduire(interieur, contexte) + "}")
             i = j
     return "".join(resultat)
 
 
-def _traduire(code, definis, modules, noms):
+def _traduire(code, contexte):
+    definis, modules, natifs, noms = contexte
     resultat = []
     precedent = ""
+    avant_point = ""  # le mot juste avant un point : dans base.inserer, c'est « base »
+    module_depuis = None
     ligne_depuis = False
     apres_importer = False
 
@@ -119,19 +140,26 @@ def _traduire(code, definis, modules, noms):
         if type_jeton == "AUTRE" and "\n" in valeur:
             ligne_depuis = False
             apres_importer = False
+            module_depuis = None
 
         sortie = valeur
         if type_jeton == "TEXTE":
-            sortie = _traduire_fstring(valeur, definis, modules, noms)
+            sortie = _traduire_fstring(valeur, contexte)
         elif type_jeton == "MOT":
             if precedent == ".":
-                sortie = valeur if valeur in definis else ATTRIBUTS.get(valeur, valeur)
+                if valeur in definis or avant_point in natifs:
+                    sortie = valeur
+                else:
+                    sortie = ATTRIBUTS.get(valeur, valeur)
             elif precedent == "comme":
                 sortie = valeur
             elif valeur in modules:
                 sortie = MODULES[valeur]
-            elif ligne_depuis and apres_importer and valeur not in MOTS_CLES:
-                sortie = ATTRIBUTS.get(valeur, valeur)
+            elif (ligne_depuis and apres_importer and valeur not in MOTS_CLES):
+                if module_depuis in natifs:
+                    sortie = valeur
+                else:
+                    sortie = ATTRIBUTS.get(valeur, valeur)
             elif valeur in noms:
                 sortie = valeur
             else:
@@ -139,15 +167,19 @@ def _traduire(code, definis, modules, noms):
 
             if valeur == "depuis":
                 ligne_depuis = True
+            elif precedent == "depuis":
+                module_depuis = valeur
             elif valeur == "importer" and ligne_depuis:
                 apres_importer = True
 
         resultat.append(sortie)
         if not valeur.isspace():
+            if valeur != ".":
+                avant_point = valeur
             precedent = valeur
     return "".join(resultat)
 
 
 def transpiler(code_baobab):
-    definis, modules, noms = _analyser(decouper(code_baobab))
-    return _traduire(code_baobab, definis, modules, noms)
+    definis, modules, natifs, noms = _analyser(decouper(code_baobab))
+    return _traduire(code_baobab, (definis, modules, natifs, noms))

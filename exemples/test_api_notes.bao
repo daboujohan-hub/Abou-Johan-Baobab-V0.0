@@ -1,0 +1,35 @@
+importer tests
+importer fichiers
+importer api_notes
+
+FICHIER_TEST = "test_notes.db"
+
+fonction avant_chaque():
+    api_notes.BASE = FICHIER_TEST
+    si fichiers.existe(FICHIER_TEST):
+        fichiers.supprimer(FICHIER_TEST)
+
+fonction apres_chaque():
+    si fichiers.existe(FICHIER_TEST):
+        fichiers.supprimer(FICHIER_TEST)
+
+fonction test_liste_vide():
+    reponse = tests.requete("/notes")
+    tests.egal(reponse.code, 200)
+    tests.egal(reponse.json(), [])
+
+fonction test_ajouter_puis_lire():
+    tests.requete("/notes/ajouter", {"texte": "Acheter du pain"})
+    notes = tests.requete("/notes").json()
+    tests.egal(longueur(notes), 1)
+    tests.egal(notes[0]["texte"], "Acheter du pain")
+
+fonction test_texte_vide_refuse():
+    reponse = tests.requete("/notes/ajouter", {"texte": "   "})
+    tests.contient(reponse.texte, "texte vide")
+    tests.egal(tests.requete("/notes").json(), [])
+
+fonction test_injection_sql_inoffensive():
+    tests.requete("/notes/ajouter", {"texte": "x'); DROP TABLE notes; --"})
+    notes = tests.requete("/notes").json()
+    tests.egal(longueur(notes), 1)

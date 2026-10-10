@@ -8,3 +8,7 @@ livre_or.txt
 visites.txt
 dist/
 node_modules/
+notes.db
+test_notes.db
+eleves.json
+eleves.csv

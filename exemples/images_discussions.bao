@@ -7,6 +7,10 @@ si choix == "":
 trouves = disque.scanner(choix)
 photos = disque.images(disque.discussions(trouves))
 
+reponse = saisir("Exclure les autocollants (stickers) ? (o/n) : ").nettoyer().minuscule()
+si reponse == "o":
+    photos = [p pour p dans photos si "sticker" non dans p.relatif.minuscule()]
+
 mot = saisir("Mot à chercher dans le nom (ex: 20261008, Entrée = tout) : ").nettoyer()
 si mot != "":
     photos = disque.contenant(photos, mot)

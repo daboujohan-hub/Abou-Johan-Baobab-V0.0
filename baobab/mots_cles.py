@@ -112,3 +112,4 @@ _PRINCIPAL = {"programme_principal": '__name__ == "__main__"'}
 MOTS_CLES.update(_PRINCIPAL)
 DICTIONNAIRE.update(_PRINCIPAL)
 MODULES["disque"] = "baobab_disque"
+MODULES.update({"base": "baobab_base", "donnees": "baobab_donnees", "données": "baobab_donnees"})

@@ -1,0 +1,12 @@
+importer base
+
+c = base.ouvrir(":memory:")
+base.executer(c, "CREATE TABLE notes (id INTEGER PRIMARY KEY AUTOINCREMENT, texte TEXT)")
+base.inserer(c, "notes", {"texte": "Acheter du pain"})
+base.inserer(c, "notes", {"texte": "Appeler Awa"})
+
+pour note dans base.chercher(c, "SELECT * FROM notes"):
+    afficher(note["id"], "-", note["texte"])
+
+afficher("Tables :", base.tables(c))
+base.fermer(c)
