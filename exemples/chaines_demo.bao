@@ -1,0 +1,12 @@
+importer chaines
+
+titre = "Ésope reste ici et se repose"
+afficher("Sans accents :", chaines.sans_accents(titre))
+afficher("Adresse :", chaines.en_adresse("Mon Premier Article !"))
+afficher("Palindrome ?", chaines.est_palindrome(titre))
+afficher("Mots :", chaines.compter_mots(titre))
+afficher("Raccourci :", chaines.couper("Bonjour tout le monde", 10))
+afficher("Nombres :", chaines.extraire_nombres("J'ai 3 chats et 2,5 kg"))
+
+phrase = "Le baobab est un arbre. Le baobab est grand, et l'arbre du baobab est vieux."
+afficher("Mots fréquents :", chaines.mots_frequents(phrase, 2))

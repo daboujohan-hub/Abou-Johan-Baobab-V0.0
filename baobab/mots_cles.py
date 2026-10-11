@@ -115,3 +115,4 @@ MODULES["disque"] = "baobab_disque"
 MODULES.update({"base": "baobab_base", "donnees": "baobab_donnees", "données": "baobab_donnees"})
 MODULES["statistiques"] = "baobab_statistiques"
 MODULES["reseau"] = "baobab_reseau"
+MODULES.update({"chaines": "baobab_chaines", "chaînes": "baobab_chaines"})

@@ -188,3 +188,4 @@ Ajoute ici la licence choisie pour le projet, par exemple un fichier `LICENSE` Ã
 
     importer statistiques   moyenne, mediane, ecart_type, pourcentage, frequences
     importer reseau         telecharger_texte, telecharger_json, telecharger_fichier, est_en_ligne, encoder_adresse
+    importer chaines        sans_accents, en_adresse, compter_mots, est_palindrome, couper, extraire_nombres, mots_frequents
