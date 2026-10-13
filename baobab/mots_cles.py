@@ -116,3 +116,4 @@ MODULES.update({"base": "baobab_base", "donnees": "baobab_donnees", "données": 
 MODULES["statistiques"] = "baobab_statistiques"
 MODULES["reseau"] = "baobab_reseau"
 MODULES.update({"chaines": "baobab_chaines", "chaînes": "baobab_chaines"})
+MODULES.update({"securite": "baobab_securite", "sécurité": "baobab_securite"})

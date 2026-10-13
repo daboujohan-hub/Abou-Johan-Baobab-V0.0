@@ -1,0 +1,23 @@
+importer serveur
+
+serveur.dossier_public("exemples/public")
+
+fonction accueil(parametres, demande):
+    visites = demande.session.obtenir("visites", 0) + 1
+    demande.session["visites"] = visites
+    contenu = serveur.modele(
+        "<h1>Bonjour {{nom}} !</h1><p>Tu as visité cette page {{visites}} fois.</p>"
+        "<p><a href='/notes/1'>Note 1</a> - <a href='/notes/9'>Note 9</a></p>",
+        {"nom": parametres.obtenir("nom", "visiteur"), "visites": visites})
+    retourner serveur.page("Mon site", contenu, css="/statique/style.css")
+
+fonction note(parametres):
+    si parametres["id"] > 3:
+        retourner serveur.repondre({"erreur": "cette note n'existe pas"}, code=404)
+    retourner {"id": parametres["id"], "texte": "Note numéro " + chaine(parametres["id"])}
+
+serveur.route("/", accueil)
+serveur.route("/notes/<id:entier>", note)
+
+si programme_principal:
+    serveur.demarrer(8000)
