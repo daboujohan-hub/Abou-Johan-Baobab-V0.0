@@ -1,0 +1,141 @@
+importer serveur
+importer securite
+importer base
+importer fichiers
+importer temps
+importer sqlite3
+
+BASE = "membres.db"
+ECHECS_MAX = 5          # essais ratés autorisés...
+ECHECS_DUREE = 300      # ...pendant 5 minutes
+
+echecs = {}             # {adresse: [moments des essais ratés]}
+fausse = []             # garde une fausse empreinte (voir connexion)
+
+pour dossier dans ["exemples/public", "public"]:
+    si fichiers.existe(dossier):
+        serveur.dossier_public(dossier)
+        arreter
+
+FORMULAIRE = """<h1>{{titre}}</h1>
+{{erreur|brut}}
+<form method='post'>
+  <p><input name='nom' placeholder="Ton nom" value="{{nom}}" required></p>
+  <p><input name='mot_de_passe' type='password' placeholder='Ton mot de passe' required></p>
+  <p><button>{{bouton}}</button></p>
+</form>
+<p><a href='/'>Retour à l'accueil</a></p>"""
+
+fonction habiller(titre, contenu, code=200):
+    page = serveur.page(titre, contenu, css="/statique/style.css")
+    retourner serveur.repondre(page, code=code)
+
+fonction page_formulaire(titre, bouton, message, nom, code=200):
+    erreur = ""
+    si message != "":
+        erreur = serveur.modele("<p class='erreur'>{{message}}</p>", {"message": message})
+    contenu = serveur.modele(FORMULAIRE, {"titre": titre, "bouton": bouton, "erreur": erreur, "nom": nom})
+    retourner habiller(titre, contenu, code)
+
+fonction connecter_base():
+    c = base.ouvrir(BASE)
+    base.executer(c, "CREATE TABLE IF NOT EXISTS membres (id INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT UNIQUE NOT NULL, empreinte TEXT NOT NULL)")
+    retourner c
+
+fonction chercher_membre(nom):
+    c = connecter_base()
+    lignes = base.chercher(c, "SELECT nom, empreinte FROM membres WHERE nom = ?", [nom])
+    base.fermer(c)
+    si lignes == []:
+        retourner rien
+    retourner lignes[0]
+
+fonction creer_membre(nom, empreinte):
+    c = connecter_base()
+    essayer:
+        base.inserer(c, "membres", {"nom": nom, "empreinte": empreinte})
+    finalement:
+        base.fermer(c)
+
+fonction nom_valide(nom):
+    retourner 3 <= longueur(nom) <= 30 et nom.remplacer("_", "").isalnum()
+
+fonction fausse_empreinte():
+    si fausse == []:
+        fausse.ajouter(securite.hacher_mot_de_passe("mot de passe bidon"))
+    retourner fausse[0]
+
+fonction trop_d_echecs(adresse):
+    maintenant = temps.maintenant()
+    recents = [t pour t dans echecs.obtenir(adresse, []) si maintenant - t < ECHECS_DUREE]
+    echecs[adresse] = recents
+    retourner longueur(recents) >= ECHECS_MAX
+
+fonction noter_echec(adresse):
+    echecs[adresse] = echecs.obtenir(adresse, []) + [temps.maintenant()]
+
+fonction accueil(parametres, demande):
+    membre = demande.session.obtenir("membre")
+    si membre est rien:
+        contenu = "<h1>Bienvenue</h1><p><a href='/inscription'>Créer un compte</a> ou <a href='/connexion'>se connecter</a></p>"
+    sinon:
+        contenu = serveur.modele("<h1>Bonjour {{nom}} !</h1><p><a href='/espace'>Aller dans mon espace</a></p>", {"nom": membre})
+    retourner habiller("Accueil", contenu)
+
+fonction inscription(parametres, demande):
+    si demande.methode != "POST":
+        retourner page_formulaire("Inscription", "Créer mon compte", "", "")
+    nom = parametres.obtenir("nom", "").nettoyer()
+    mot_de_passe = parametres.obtenir("mot_de_passe", "")
+    si non nom_valide(nom):
+        retourner page_formulaire("Inscription", "Créer mon compte", "Le nom doit avoir 3 à 30 lettres, chiffres ou _.", nom, 400)
+    si longueur(mot_de_passe) < 8:
+        retourner page_formulaire("Inscription", "Créer mon compte", "Le mot de passe doit avoir au moins 8 caractères.", nom, 400)
+    essayer:
+        creer_membre(nom, securite.hacher_mot_de_passe(mot_de_passe))
+    sauf sqlite3.IntegrityError:
+        retourner page_formulaire("Inscription", "Créer mon compte", "Ce nom est déjà pris.", nom, 409)
+    demande.session["membre"] = nom
+    demande.nouvelle_session()
+    retourner serveur.rediriger("/espace")
+
+fonction connexion(parametres, demande):
+    si demande.methode != "POST":
+        retourner page_formulaire("Connexion", "Me connecter", "", "")
+    nom = parametres.obtenir("nom", "").nettoyer()
+    mot_de_passe = parametres.obtenir("mot_de_passe", "")
+    si trop_d_echecs(demande.adresse_ip):
+        retourner page_formulaire("Connexion", "Me connecter", "Trop d'essais ratés. Réessaie dans quelques minutes.", nom, 429)
+    membre = chercher_membre(nom)
+    # même travail que le nom existe ou non : on ne révèle pas quels comptes existent
+    empreinte = fausse_empreinte()
+    si membre est non rien:
+        empreinte = membre["empreinte"]
+    correct = securite.verifier_mot_de_passe(mot_de_passe, empreinte)
+    si correct et membre est non rien:
+        demande.session["membre"] = nom
+        demande.nouvelle_session()
+        retourner serveur.rediriger("/espace")
+    noter_echec(demande.adresse_ip)
+    retourner page_formulaire("Connexion", "Me connecter", "Nom ou mot de passe incorrect.", nom, 401)
+
+fonction espace(parametres, demande):
+    membre = demande.session.obtenir("membre")
+    si membre est rien:
+        retourner serveur.rediriger("/connexion")
+    contenu = serveur.modele("<h1>Mon espace</h1><p>Bienvenue, <b>{{nom}}</b> ! Cette page est privée.</p><form method='post' action='/deconnexion'><button>Me déconnecter</button></form>", {"nom": membre})
+    retourner habiller("Mon espace", contenu)
+
+fonction deconnexion(parametres, demande):
+    si demande.methode == "POST":
+        demande.fermer_session()
+    retourner serveur.rediriger("/")
+
+serveur.route("/", accueil)
+serveur.route("/inscription", inscription)
+serveur.route("/connexion", connexion)
+serveur.route("/espace", espace)
+serveur.route("/deconnexion", deconnexion)
+
+si programme_principal:
+    serveur.demarrer(8000)

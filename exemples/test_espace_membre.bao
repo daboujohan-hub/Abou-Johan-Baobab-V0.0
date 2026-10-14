@@ -1,0 +1,121 @@
+importer tests
+importer fichiers
+importer securite
+importer base
+importer espace_membre
+
+FICHIER_TEST = "test_membres.db"
+MOT_DE_PASSE = "motdepasse123"
+
+fonction avant_chaque():
+    securite.ITERATIONS = 1000      # rapide pour les tests (la vraie valeur est 600 000)
+    espace_membre.BASE = FICHIER_TEST
+    espace_membre.echecs.vider()
+    si fichiers.existe(FICHIER_TEST):
+        fichiers.supprimer(FICHIER_TEST)
+
+fonction apres_chaque():
+    si fichiers.existe(FICHIER_TEST):
+        fichiers.supprimer(FICHIER_TEST)
+
+fonction inscrire(nom):
+    nav = tests.navigateur()
+    nav.requete("/inscription", {"nom": nom, "mot_de_passe": MOT_DE_PASSE})
+    retourner nav
+
+fonction test_pages_publiques():
+    nav = tests.navigateur()
+    tests.egal(nav.requete("/").code, 200)
+    tests.contient(nav.requete("/inscription").texte, "<form")
+    tests.contient(nav.requete("/connexion").texte, "<form")
+    tests.egal(nav.requete("/statique/style.css").code, 200)
+
+fonction test_espace_prive_demande_la_connexion():
+    reponse = tests.navigateur().requete("/espace")
+    tests.egal(reponse.code, 303)
+    tests.egal(reponse.adresse, "/connexion")
+
+fonction test_inscription_puis_espace():
+    nav = tests.navigateur()
+    reponse = nav.requete("/inscription", {"nom": "awa_k", "mot_de_passe": MOT_DE_PASSE})
+    tests.egal(reponse.code, 303)
+    tests.egal(reponse.adresse, "/espace")
+    espace = nav.requete("/espace")
+    tests.egal(espace.code, 200)
+    tests.contient(espace.texte, "awa_k")
+
+fonction test_le_mot_de_passe_n_est_jamais_enregistre():
+    inscrire("awa_k")
+    c = base.ouvrir(FICHIER_TEST)
+    lignes = base.chercher(c, "SELECT empreinte FROM membres")
+    base.fermer(c)
+    tests.egal(longueur(lignes), 1)
+    tests.est_faux(MOT_DE_PASSE dans lignes[0]["empreinte"])
+    tests.est_vrai(lignes[0]["empreinte"].startswith("pbkdf2_sha256$"))
+
+fonction test_nom_deja_pris():
+    inscrire("awa_k")
+    reponse = tests.navigateur().requete("/inscription", {"nom": "awa_k", "mot_de_passe": "unautremotdepasse"})
+    tests.egal(reponse.code, 409)
+    tests.contient(reponse.texte, "déjà pris")
+
+fonction test_donnees_refusees():
+    nav = tests.navigateur()
+    court = nav.requete("/inscription", {"nom": "awa_k", "mot_de_passe": "court"})
+    tests.egal(court.code, 400)
+    tests.contient(court.texte, "8 caractères")
+    petit_nom = nav.requete("/inscription", {"nom": "a", "mot_de_passe": MOT_DE_PASSE})
+    tests.egal(petit_nom.code, 400)
+
+fonction test_le_nom_est_protege_dans_la_page():
+    reponse = tests.navigateur().requete("/inscription", {"nom": "<script>x</script>", "mot_de_passe": MOT_DE_PASSE})
+    tests.egal(reponse.code, 400)
+    tests.est_faux("<script>x" dans reponse.texte)
+    tests.contient(reponse.texte, "&lt;script&gt;")
+
+fonction test_connexion_reussie():
+    inscrire("awa_k")
+    nav = tests.navigateur()
+    reponse = nav.requete("/connexion", {"nom": "awa_k", "mot_de_passe": MOT_DE_PASSE})
+    tests.egal(reponse.code, 303)
+    tests.egal(reponse.adresse, "/espace")
+    tests.egal(nav.requete("/espace").code, 200)
+
+fonction test_mauvais_mot_de_passe():
+    inscrire("awa_k")
+    nav = tests.navigateur()
+    reponse = nav.requete("/connexion", {"nom": "awa_k", "mot_de_passe": "mauvaismotdepasse"})
+    tests.egal(reponse.code, 401)
+    tests.contient(reponse.texte, "incorrect")
+    tests.egal(nav.requete("/espace").code, 303)
+
+fonction test_nom_inconnu_meme_message():
+    reponse = tests.navigateur().requete("/connexion", {"nom": "personne", "mot_de_passe": "nimportequoi"})
+    tests.egal(reponse.code, 401)
+    tests.contient(reponse.texte, "Nom ou mot de passe incorrect")
+
+fonction test_l_identifiant_de_session_change_a_la_connexion():
+    inscrire("awa_k")
+    nav = tests.navigateur()
+    nav.requete("/")
+    avant = nav.cookies["baobab_session"]
+    nav.requete("/connexion", {"nom": "awa_k", "mot_de_passe": MOT_DE_PASSE})
+    tests.different(nav.cookies["baobab_session"], avant)
+
+fonction test_deconnexion():
+    nav = inscrire("awa_k")
+    tests.egal(nav.requete("/espace").code, 200)
+    reponse = nav.requete("/deconnexion", {})
+    tests.egal(reponse.adresse, "/")
+    tests.egal(nav.requete("/espace").code, 303)
+
+fonction test_blocage_apres_5_echecs():
+    nav = tests.navigateur()
+    pour i dans intervalle(5):
+        tests.egal(nav.requete("/connexion", {"nom": "x", "mot_de_passe": "mauvais"}).code, 401)
+    tests.egal(nav.requete("/connexion", {"nom": "x", "mot_de_passe": "mauvais"}).code, 429)
+
+fonction test_cookie_de_session_protege():
+    cookie = tests.navigateur().requete("/").cookies_bruts[0]
+    tests.contient(cookie, "HttpOnly")
+    tests.contient(cookie, "SameSite=Lax")
