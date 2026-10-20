@@ -190,3 +190,9 @@ Ajoute ici la licence choisie pour le projet, par exemple un fichier `LICENSE` Ã
     importer reseau         telecharger_texte, telecharger_json, telecharger_fichier, est_en_ligne, encoder_adresse
     importer chaines        sans_accents, en_adresse, compter_mots, est_palindrome, couper, extraire_nombres, mots_frequents
     importer securite       hacher_mot_de_passe, verifier_mot_de_passe, jeton_aleatoire, signer, verifier_signature
+
+## Documentation
+
+- [Guide d utilisation](docs/guide-utilisation.md)
+- [Cahier des charges](docs/cahier-des-charges.md)
+- [Tutoriel](docs/tutoriel.md)
