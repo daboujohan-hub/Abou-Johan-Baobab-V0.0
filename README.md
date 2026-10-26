@@ -196,3 +196,5 @@ Ajoute ici la licence choisie pour le projet, par exemple un fichier `LICENSE` Ã
 - [Guide d utilisation](docs/guide-utilisation.md)
 - [Cahier des charges](docs/cahier-des-charges.md)
 - [Tutoriel](docs/tutoriel.md)
+    serveur.route(... methodes=[...])    GET, POST, PUT, PATCH, DELETE   (JSON : demande.json)
+    serveur.autoriser_origines / exiger_jeton / refuser    CORS, jetons, erreurs en JSON

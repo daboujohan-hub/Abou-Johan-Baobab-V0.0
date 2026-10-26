@@ -28,11 +28,13 @@ import secrets
 import threading
 import time
 from html import escape
+from http import HTTPStatus
 from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
 _routes = {}
+_methodes = {}  # {adresse: méthodes permises}
 _dossiers_publics = []
 _sessions = {}
 _verrou_sessions = threading.Lock()
@@ -43,6 +45,9 @@ COOKIES_SECURISES = os.environ.get("BAOBAB_HTTPS", "").lower() in ("1", "oui", "
 NOM_COOKIE_SESSION = "baobab_session"
 SESSION_DUREE = 7 * 24 * 3600  # une session inactive pendant 7 jours est oubliée
 SESSIONS_MAX = 10_000
+TAILLE_MAX_JSON = 1_000_000  # taille maximale d'un JSON reçu (en octets)
+METHODES_PAR_DEFAUT = ("GET", "POST")
+METHODES_CONFIGURABLES = ("GET", "POST", "PUT", "PATCH", "DELETE")
 
 ENTETES_SECURITE = {
     "X-Content-Type-Options": "nosniff",
@@ -322,14 +327,38 @@ class Demande:
             demande.session["visites"] = demande.session.obtenir("visites", 0) + 1
     """
 
-    def __init__(self, gestionnaire, chemin):
+    def __init__(self, gestionnaire, chemin, corps=b""):
         self.methode = gestionnaire.command
         self.chemin = chemin
+        self.corps = corps
+        self.type_contenu = gestionnaire.headers.get("Content-Type", "")
         self.entetes = {nom.lower(): valeur for nom, valeur in gestionnaire.headers.items()}
         self.adresse_ip = gestionnaire.client_address[0]
         self.cookies = _lire_cookies("; ".join(gestionnaire.headers.get_all("Cookie", [])))
         self._session = None
         self._cookie_a_poser = None
+
+    @property
+    def json(self):
+        """Le JSON envoyé par l'application (dictionnaire, liste...), ou None s'il n'y a rien.
+
+        Si le contenu n'est pas du JSON valide, la demande s'arrête toute seule (code 415 ou 400).
+        """
+        if not self.corps:
+            return None
+        if "json" not in self.type_contenu.lower():
+            raise ErreurHTTP(415, "Le contenu doit être du JSON (Content-Type: application/json)")
+        try:
+            return json.loads(self.corps.decode("utf-8"))
+        except (ValueError, RecursionError):  # UnicodeDecodeError est une ValueError
+            raise ErreurHTTP(400, "Le JSON envoyé est invalide") from None
+
+    @property
+    def jeton(self):
+        """Le jeton d'accès envoyé par une application (Authorization: Bearer ...), ou None."""
+        schema, _, valeur = self.entetes.get("authorization", "").partition(" ")
+        valeur = valeur.strip()
+        return valeur if schema.lower() == "bearer" and valeur else None
 
     @property
     def session(self):
@@ -383,19 +412,44 @@ def _compiler_adresse(chemin):
         raise ValueError(f"Adresse invalide : {chemin} (un nom est utilisé deux fois ?)") from None
 
 
-def route(chemin, fonction=None):
+def _normaliser_methodes(methodes):
+    if methodes is None:
+        return METHODES_PAR_DEFAUT
+    if isinstance(methodes, str):
+        methodes = [methodes]
+    resultat = set()
+    for methode in methodes:
+        nom = str(methode).upper()
+        if nom in ("HEAD", "OPTIONS"):
+            raise ValueError(f"{nom} est géré automatiquement : ne l'écris pas dans methodes")
+        if nom not in METHODES_CONFIGURABLES:
+            raise ValueError(
+                f"Méthode inconnue : {methode!r} (possibles : {', '.join(METHODES_CONFIGURABLES)})")
+        resultat.add(nom)
+    if not resultat:
+        raise ValueError("Il faut au moins une méthode")
+    return tuple(sorted(resultat))
+
+
+def route(chemin, fonction=None, methodes=None):
     """Associe une adresse (ex: "/contact") à une fonction.
 
     Les adresses peuvent avoir des parties variables : "/notes/<id:entier>" ou "/profil/<nom>".
     La valeur arrive dans les paramètres de ta fonction : parametres["id"].
+
+    methodes : les méthodes permises, par exemple ["GET", "POST", "PUT", "DELETE"].
+    Sans cela : GET et POST seulement. Une autre méthode reçoit le code 405.
+    La fonction regarde demande.methode pour savoir laquelle est utilisée.
     """
     if not str(chemin).startswith("/"):
         raise ValueError("Une adresse doit commencer par « / »")
+    permises = _normaliser_methodes(methodes)
     if "<" in chemin:
         _compiler_adresse(chemin)  # signale tout de suite une adresse mal écrite
 
     def enregistrer(f):
         _routes[chemin] = f
+        _methodes[chemin] = permises
         return f
 
     if fonction is None:
@@ -404,9 +458,10 @@ def route(chemin, fonction=None):
 
 
 def _trouver_route(chemin):
+    """(l'adresse enregistrée, la fonction, les valeurs de l'adresse)"""
     fonction = _routes.get(chemin)
     if fonction is not None:
-        return fonction, {}
+        return chemin, fonction, {}
     for modele_adresse, fonction in list(_routes.items()):
         if "<" not in modele_adresse:
             continue
@@ -416,8 +471,8 @@ def _trouver_route(chemin):
             valeurs = {}
             for nom, texte in trouve.groupdict().items():
                 valeurs[nom] = int(texte) if types[nom] == "entier" else unquote(texte)
-            return fonction, valeurs
-    return None, {}
+            return modele_adresse, fonction, valeurs
+    return None, None, {}
 
 
 # ------------------------------------------------------- fichiers publics
@@ -462,6 +517,131 @@ def _fichier_public(chemin):
 # ------------------------------------------------------------ le serveur
 
 
+# ---------------------------------------------- erreurs, CORS, jetons d'accès
+
+
+def _phrase(code):
+    try:
+        return HTTPStatus(code).phrase
+    except ValueError:
+        return "Erreur"
+
+
+class ErreurHTTP(Exception):
+    """Arrête la demande avec un code précis : lever serveur.ErreurHTTP(404, "Note introuvable")
+
+    L'application reçoit {"erreur": "Note introuvable"} avec le code 404.
+    """
+
+    def __init__(self, code, message="", entetes=None):
+        if isinstance(code, bool) or not isinstance(code, int) or not 400 <= code <= 599:
+            raise ValueError("Le code d'une erreur doit être un nombre entre 400 et 599")
+        super().__init__(message)
+        self.code = code
+        self.message = str(message)
+        self.entetes = dict(entetes or {})
+        for nom, valeur in self.entetes.items():
+            _verifier_entete(nom, valeur)
+
+
+def refuser(code, message=""):
+    """Arrête la demande tout de suite : serveur.refuser(404, "Cette note n'existe pas")"""
+    raise ErreurHTTP(code, message)
+
+
+def exiger_jeton(demande, cle, droit=None):
+    """Exige un jeton d'accès valide (en-tête « Authorization: Bearer ... »).
+
+    Retourne {"identite": ..., "droits": [...]}. Sinon la demande s'arrête avec le code 401
+    (jeton absent, faux ou périmé) ou 403 (le jeton n'a pas le droit demandé).
+    Les jetons se fabriquent avec securite.creer_jeton_acces(...).
+    """
+    from . import securite
+
+    jeton = demande.jeton
+    if jeton is None:
+        raise ErreurHTTP(401, "Jeton d'accès manquant", {"WWW-Authenticate": "Bearer"})
+    contenu = securite.verifier_jeton_acces(jeton, cle)
+    if contenu is None:
+        raise ErreurHTTP(401, "Jeton d'accès invalide ou périmé",
+                         {"WWW-Authenticate": 'Bearer error="invalid_token"'})
+    if droit is not None and droit not in contenu["droits"]:
+        raise ErreurHTTP(403, "Ce jeton n'a pas le droit nécessaire")
+    return contenu
+
+
+_ORIGINE = re.compile(r"^https?://[a-z0-9.-]+(:[0-9]{1,5})?$")
+_cors = {"origines": frozenset(), "avec_cookies": False, "entetes": ("Content-Type", "Authorization")}
+
+
+def autoriser_origines(origines, avec_cookies=False, entetes=()):
+    """Autorise des sites ou des applications web à appeler ton API depuis un navigateur (CORS).
+
+        serveur.autoriser_origines(["https://monsite.org", "http://localhost:3000"])
+
+    origines : la liste des sites autorisés ("https://monsite.org", sans chemin).
+               "*" autorise tout le monde, mais jamais avec les cookies.
+    avec_cookies : vrai pour que ces sites puissent envoyer les cookies (jamais avec "*").
+    entetes : en-têtes supplémentaires autorisés (Content-Type et Authorization le sont déjà).
+    Une liste vide supprime toutes les autorisations.
+    """
+    liste = set()
+    for origine in origines:
+        propre = str(origine).strip().lower().rstrip("/")
+        if propre != "*" and not _ORIGINE.match(propre):
+            raise ValueError(
+                f"Origine invalide : {origine!r} (écris par exemple https://monsite.org, sans chemin)")
+        liste.add(propre)
+    if "*" in liste and avec_cookies:
+        raise ValueError("« * » (tout le monde) ne peut pas être autorisé avec les cookies")
+    for nom in entetes:
+        if not _NOM_ENTETE.match(str(nom)):
+            raise ValueError(f"Nom d'en-tête invalide : {nom!r}")
+    _cors["origines"] = frozenset(liste)
+    _cors["avec_cookies"] = bool(avec_cookies)
+    _cors["entetes"] = tuple(dict.fromkeys(("Content-Type", "Authorization") + tuple(entetes)))
+
+
+def _entetes_cors(origine):
+    if not _cors["origines"]:
+        return {}
+    if "*" in _cors["origines"]:
+        return {"Access-Control-Allow-Origin": "*"}
+    entetes = {"Vary": "Origin"}
+    if str(origine).lower() in _cors["origines"]:
+        entetes["Access-Control-Allow-Origin"] = origine
+        if _cors["avec_cookies"]:
+            entetes["Access-Control-Allow-Credentials"] = "true"
+    return entetes
+
+
+def _entetes_cors_preliminaire(origine, methode, entetes_demandes, permises):
+    base = _entetes_cors(origine)
+    if "Access-Control-Allow-Origin" not in base:
+        return None
+    if methode.strip().upper() not in permises:
+        return None
+    autorises = {nom.lower() for nom in _cors["entetes"]}
+    demandes = [nom.strip() for nom in entetes_demandes.split(",") if nom.strip()]
+    if any(nom.lower() not in autorises for nom in demandes):
+        return None
+    base["Access-Control-Allow-Methods"] = ", ".join(sorted(permises))
+    if demandes:
+        base["Access-Control-Allow-Headers"] = ", ".join(demandes)
+    base["Access-Control-Max-Age"] = "600"
+    return base
+
+
+def _allow(permises):
+    toutes = set(permises) | {"OPTIONS"}
+    if "GET" in toutes:
+        toutes.add("HEAD")
+    return ", ".join(sorted(toutes))
+
+
+# ------------------------------------------------------------ le serveur
+
+
 def _appeler(fonction, parametres, demande):
     try:
         nombre = len(inspect.signature(fonction).parameters)
@@ -480,43 +660,70 @@ def _lire_champs(texte):
 
 class _Gestionnaire(BaseHTTPRequestHandler):
     def do_GET(self):
-        self._traiter({})
+        self._lancer()
 
-    def do_POST(self):
+    do_HEAD = do_POST = do_PUT = do_PATCH = do_DELETE = do_GET
+
+    def do_OPTIONS(self):
+        self._preliminaire()
+
+    def _lire_corps(self):
+        """Lit le corps de la demande. Retourne (octets, type de contenu), ou None si refusé."""
+        type_contenu = self.headers.get("Content-Type", "")
+        if self.command not in ("POST", "PUT", "PATCH", "DELETE"):
+            return b"", type_contenu
         try:
             taille = int(self.headers.get("Content-Length", 0) or 0)
         except ValueError:
+            taille = -1
+        if taille < 0:
             self._envoyer_simple(400, "<h1>Demande incorrecte</h1>")
-            return
-        if taille > TAILLE_MAX:
+            return None
+        limite = TAILLE_MAX_JSON if "json" in type_contenu.lower() else TAILLE_MAX
+        if taille > limite:
             self._envoyer_simple(413, "<h1>Message trop long</h1>")
-            return
-        corps = self.rfile.read(taille).decode("utf-8", errors="replace")
-        self._traiter(_lire_champs(corps))
+            return None
+        return self.rfile.read(taille), type_contenu
 
-    def _traiter(self, formulaire):
+    def _lancer(self):
+        lu = self._lire_corps()
+        if lu is None:
+            return
+        corps, type_contenu = lu
         adresse = urlparse(self.path)
         chemin = adresse.path or "/"
-        demande = Demande(self, chemin)
+        demande = Demande(self, chemin, corps)
 
-        if self.command == "GET":
+        if self.command in ("GET", "HEAD"):
             fichier = _fichier_public(chemin)
             if fichier is not None:
                 self._envoyer_fichier(fichier)
                 return
 
-        parametres = _lire_champs(adresse.query)
-        parametres.update(formulaire)
-        fonction, valeurs = _trouver_route(chemin)
+        modele_adresse, fonction, valeurs = _trouver_route(chemin)
         if fonction is None:
             self._envoyer_simple(404, "<h1>404</h1><p>Cette page n'existe pas.</p>", "Page introuvable")
             return
+        permises = _methodes.get(modele_adresse, METHODES_PAR_DEFAUT)
+        if ("GET" if self.command == "HEAD" else self.command) not in permises:
+            self._envoyer_simple(
+                405, "<h1>405</h1><p>Cette méthode n'est pas permise ici.</p>",
+                "Méthode non permise", {"Allow": _allow(permises)})
+            return
+
+        parametres = _lire_champs(adresse.query)
+        if "json" not in type_contenu.lower():
+            parametres.update(_lire_champs(corps.decode("utf-8", errors="replace")))
         parametres.update(valeurs)  # les valeurs de l'adresse l'emportent sur le reste
 
         try:
             resultat = _appeler(fonction, parametres, demande)
             reponse = resultat if isinstance(resultat, Reponse) else Reponse(resultat)
-            corps, type_contenu = reponse.corps_et_type()
+            corps_reponse, type_reponse = reponse.corps_et_type()
+        except ErreurHTTP as erreur:
+            reponse = Reponse({"erreur": erreur.message or _phrase(erreur.code)},
+                              erreur.code, erreur.entetes)
+            corps_reponse, type_reponse = reponse.corps_et_type()
         except Exception as erreur:
             from baobab.erreurs import expliquer
 
@@ -526,13 +733,42 @@ class _Gestionnaire(BaseHTTPRequestHandler):
             self._envoyer_simple(
                 500, f"<h1>Erreur dans le programme</h1><p>{echapper(explication)}</p>", "Erreur")
             return
-        self._envoyer(reponse, corps, type_contenu, demande)
+        self._envoyer(reponse, corps_reponse, type_reponse, demande)
+
+    def _preliminaire(self):
+        """OPTIONS : « quelles méthodes sont permises ici ? » (et la vérification CORS)."""
+        chemin = urlparse(self.path).path or "/"
+        modele_adresse, fonction, _ = _trouver_route(chemin)
+        if fonction is None:
+            self._envoyer_simple(404, "<h1>404</h1><p>Cette page n'existe pas.</p>", "Page introuvable")
+            return
+        permises = set(_methodes.get(modele_adresse, METHODES_PAR_DEFAUT))
+        entetes = {"Allow": _allow(permises)}
+        origine = self.headers.get("Origin")
+        demandee = self.headers.get("Access-Control-Request-Method")
+        if origine and demandee:  # la requête préliminaire d'un navigateur
+            cors = _entetes_cors_preliminaire(
+                origine, demandee, self.headers.get("Access-Control-Request-Headers", ""), permises)
+            if cors is None:
+                self._envoyer_simple(
+                    403, "<h1>403</h1><p>Origine, méthode ou en-têtes non autorisés.</p>",
+                    "Refusé", entetes)
+                return
+            entetes.update(cors)
+        self._envoyer(Reponse("", 204, entetes), b"", "text/plain", None)
 
     def _envoyer(self, reponse, corps, type_contenu, demande=None):
-        entetes = {"content-type": ("Content-Type", type_contenu),
-                   "content-length": ("Content-Length", str(len(corps)))}
+        sans_corps = reponse.code in (204, 304) or 100 <= reponse.code < 200
+        entetes = {}
+        if not sans_corps:
+            entetes["content-type"] = ("Content-Type", type_contenu)
+            entetes["content-length"] = ("Content-Length", str(len(corps)))
         for nom, valeur in ENTETES_SECURITE.items():
             entetes[nom.lower()] = (nom, valeur)
+        origine = self.headers.get("Origin")
+        if origine:
+            for nom, valeur in _entetes_cors(origine).items():
+                entetes[nom.lower()] = (nom, valeur)
         for nom, valeur in reponse.entetes.items():
             entetes[nom.lower()] = (nom, str(valeur))
         cookies = list(reponse.cookies)
@@ -545,12 +781,13 @@ class _Gestionnaire(BaseHTTPRequestHandler):
         for un_cookie in cookies:
             self.send_header("Set-Cookie", un_cookie.entete())
         self.end_headers()
-        self.wfile.write(corps)
+        if not sans_corps and self.command != "HEAD":
+            self.wfile.write(corps)
         if not SILENCIEUX:
             print(f"📥 {self.command} {self.path} -> {reponse.code}")
 
-    def _envoyer_simple(self, code, contenu, titre="Erreur"):
-        reponse = Reponse(page(titre, contenu), code)
+    def _envoyer_simple(self, code, contenu, titre="Erreur", entetes=None):
+        reponse = Reponse(page(titre, contenu), code, entetes)
         corps, type_contenu = reponse.corps_et_type()
         self._envoyer(reponse, corps, type_contenu)
 
@@ -569,7 +806,7 @@ class _Gestionnaire(BaseHTTPRequestHandler):
                 for nom, valeur in ENTETES_SECURITE.items():
                     self.send_header(nom, valeur)
                 self.end_headers()
-                while True:
+                while self.command != "HEAD":
                     morceau = fichier.read(64 * 1024)
                     if not morceau:
                         break

@@ -1,0 +1,88 @@
+importer serveur
+importer securite
+importer os
+
+# La clé qui signe les jetons : en vrai, lis-la dans une variable d'environnement
+CLE = os.environ.get("BAOBAB_CLE", "cle-de-demonstration-a-remplacer")
+
+NOTES = {}                  # {numéro: {"id": ..., "texte": ...}}
+etat = {"suivant": 1}       # le numéro de la prochaine note
+compte = []                 # garde l'empreinte du compte de démonstration
+
+# Seule cette application web a le droit d'appeler l'API depuis un navigateur
+serveur.autoriser_origines(["http://localhost:3000"])
+
+fonction empreinte_du_compte():
+    si compte == []:
+        compte.ajouter(securite.hacher_mot_de_passe("motdepasse123"))
+    retourner compte[0]
+
+fonction connexion(parametres, demande):
+    """Connecte une application et lui donne un jeton valable 1 heure.
+
+    Envoie du JSON : {"nom": "demo", "mot_de_passe": "motdepasse123"}
+    """
+    donnees = demande.json
+    si donnees est rien ou non est_instance(donnees, dict):
+        serveur.refuser(400, "Envoie du JSON : {'nom': ..., 'mot_de_passe': ...}")
+    nom = donnees.obtenir("nom", "")
+    mot_de_passe = chaine(donnees.obtenir("mot_de_passe", ""))
+    # on vérifie toujours le mot de passe, même si le nom est faux : même durée dans les deux cas
+    correct = securite.verifier_mot_de_passe(mot_de_passe, empreinte_du_compte())
+    si nom != "demo" ou non correct:
+        serveur.refuser(401, "Nom ou mot de passe incorrect")
+    jeton = securite.creer_jeton_acces(nom, CLE, 3600, ["lecture", "ecriture"])
+    retourner {"jeton": jeton, "valable_secondes": 3600}
+
+fonction notes(parametres, demande):
+    """Les notes. GET : la liste (droit « lecture »).
+
+    POST : ajoute une note (droit « ecriture »). Envoie {"texte": "..."}
+    """
+    si demande.methode == "GET":
+        serveur.exiger_jeton(demande, CLE, "lecture")
+        retourner en_liste(NOTES.valeurs())
+    serveur.exiger_jeton(demande, CLE, "ecriture")
+    donnees = demande.json
+    texte = ""
+    si est_instance(donnees, dict):
+        texte = chaine(donnees.obtenir("texte", "")).nettoyer()
+    si texte == "":
+        serveur.refuser(400, "Il faut un texte : {'texte': '...'}")
+    identifiant = etat["suivant"]
+    etat["suivant"] = identifiant + 1
+    NOTES[identifiant] = {"id": identifiant, "texte": texte[:200]}
+    retourner serveur.repondre(NOTES[identifiant], code=201)
+
+fonction une_note(parametres, demande):
+    """Une note : GET (lire), PUT (changer le texte), DELETE (supprimer).
+
+    L'identifiant est dans l'adresse : /notes/1
+    """
+    identifiant = parametres["id"]
+    si demande.methode == "GET":
+        serveur.exiger_jeton(demande, CLE, "lecture")
+    sinon:
+        serveur.exiger_jeton(demande, CLE, "ecriture")
+    si identifiant non dans NOTES:
+        serveur.refuser(404, "Cette note n'existe pas")
+    si demande.methode == "DELETE":
+        effacer NOTES[identifiant]
+        retourner serveur.repondre("", code=204)
+    si demande.methode == "PUT":
+        donnees = demande.json
+        texte = ""
+        si est_instance(donnees, dict):
+            texte = chaine(donnees.obtenir("texte", "")).nettoyer()
+        si texte == "":
+            serveur.refuser(400, "Il faut un texte : {'texte': '...'}")
+        NOTES[identifiant]["texte"] = texte[:200]
+    retourner NOTES[identifiant]
+
+serveur.route("/connexion", connexion, methodes=["POST"])
+serveur.route("/notes", notes, methodes=["GET", "POST"])
+serveur.route("/notes/<id:entier>", une_note, methodes=["GET", "PUT", "DELETE"])
+serveur.documenter("/documentation", "API des notes")
+
+si programme_principal:
+    serveur.demarrer(8000)

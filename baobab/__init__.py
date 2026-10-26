@@ -1,6 +1,6 @@
 """Baobab : un langage de programmation en français, propulsé par Python."""
 
-__version__ = "0.13.0"
+__version__ = "0.15.0"
 
 from .bibliotheque import enregistrer
 

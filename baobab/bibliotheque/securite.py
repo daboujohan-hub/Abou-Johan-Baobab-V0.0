@@ -119,3 +119,85 @@ def verifier_signature(texte_signe, cle):
         return _depuis_texte(corps).decode("utf-8")
     except (ValueError, TypeError, UnicodeError):
         return None
+
+
+# ------------------------------------------------------- jetons d'accès
+
+import json as _json  # noqa: E402  (pour les jetons d'accès ci-dessous)
+
+
+def creer_jeton_acces(identite, cle, duree=3600, droits=()):
+    """Fabrique un jeton d'accès pour une application (envoyé dans « Authorization: Bearer ... »).
+
+        jeton = securite.creer_jeton_acces("awa", CLE, 3600, ["lecture", "ecriture"])
+
+    identite : à qui appartient le jeton.   duree : secondes de validité (obligatoire : un jeton
+    sans fin de validité est dangereux).   droits : ce que le jeton permet de faire.
+    Le contenu est signé mais PAS caché : n'y mets aucun secret. Un jeton ne peut pas être
+    annulé avant sa fin : garde une durée courte.
+    """
+    if not duree or duree <= 0:
+        raise ValueError("Un jeton d'accès doit avoir une durée de validité positive (en secondes)")
+    contenu = {"i": str(identite), "d": sorted({str(droit) for droit in droits})}
+    return signer(_json.dumps(contenu, ensure_ascii=False, separators=(",", ":")), cle, duree)
+
+
+def verifier_jeton_acces(jeton, cle):
+    """Retourne {"identite": ..., "droits": [...]} si le jeton est bon, sinon None.
+
+    None veut dire : modifié, faux, périmé, ou fabriqué avec une autre clé.
+    """
+    texte = verifier_signature(jeton, cle)
+    if texte is None:
+        return None
+    try:
+        contenu = _json.loads(texte)
+    except ValueError:
+        return None
+    if not isinstance(contenu, dict) or not isinstance(contenu.get("i"), str):
+        return None
+    droits = contenu.get("d", [])
+    if not isinstance(droits, list):
+        return None
+    return {"identite": contenu["i"], "droits": [str(droit) for droit in droits]}
+
+
+# ------------------------------------------------------- jetons d'accès
+
+import json as _json  # noqa: E402  (pour les jetons d'accès ci-dessous)
+
+
+def creer_jeton_acces(identite, cle, duree=3600, droits=()):
+    """Fabrique un jeton d'accès pour une application (envoyé dans « Authorization: Bearer ... »).
+
+        jeton = securite.creer_jeton_acces("awa", CLE, 3600, ["lecture", "ecriture"])
+
+    identite : à qui appartient le jeton.   duree : secondes de validité (obligatoire : un jeton
+    sans fin de validité est dangereux).   droits : ce que le jeton permet de faire.
+    Le contenu est signé mais PAS caché : n'y mets aucun secret. Un jeton ne peut pas être
+    annulé avant sa fin : garde une durée courte.
+    """
+    if not duree or duree <= 0:
+        raise ValueError("Un jeton d'accès doit avoir une durée de validité positive (en secondes)")
+    contenu = {"i": str(identite), "d": sorted({str(droit) for droit in droits})}
+    return signer(_json.dumps(contenu, ensure_ascii=False, separators=(",", ":")), cle, duree)
+
+
+def verifier_jeton_acces(jeton, cle):
+    """Retourne {"identite": ..., "droits": [...]} si le jeton est bon, sinon None.
+
+    None veut dire : modifié, faux, périmé, ou fabriqué avec une autre clé.
+    """
+    texte = verifier_signature(jeton, cle)
+    if texte is None:
+        return None
+    try:
+        contenu = _json.loads(texte)
+    except ValueError:
+        return None
+    if not isinstance(contenu, dict) or not isinstance(contenu.get("i"), str):
+        return None
+    droits = contenu.get("d", [])
+    if not isinstance(droits, list):
+        return None
+    return {"identite": contenu["i"], "droits": [str(droit) for droit in droits]}

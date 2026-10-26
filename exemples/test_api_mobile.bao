@@ -1,0 +1,89 @@
+importer tests
+importer securite
+importer api_mobile
+
+fonction avant_chaque():
+    securite.ITERATIONS = 1000      # rapide pour les tests (la vraie valeur est 600 000)
+    api_mobile.NOTES.vider()
+    api_mobile.etat["suivant"] = 1
+
+fonction se_connecter():
+    reponse = tests.requete("/connexion", json={"nom": "demo", "mot_de_passe": "motdepasse123"})
+    retourner {"Authorization": "Bearer " + reponse.json()["jeton"]}
+
+fonction test_connexion_donne_un_jeton():
+    reponse = tests.requete("/connexion", json={"nom": "demo", "mot_de_passe": "motdepasse123"})
+    tests.egal(reponse.code, 200)
+    tests.est_vrai(longueur(reponse.json()["jeton"]) > 20)
+
+fonction test_mauvais_mot_de_passe():
+    reponse = tests.requete("/connexion", json={"nom": "demo", "mot_de_passe": "mauvais"})
+    tests.egal(reponse.code, 401)
+    tests.egal(reponse.json()["erreur"], "Nom ou mot de passe incorrect")
+
+fonction test_connexion_exige_du_json():
+    tests.egal(tests.requete("/connexion", methode="POST").code, 400)
+    tests.egal(tests.requete("/connexion", {"nom": "demo"}).code, 415)
+    tests.egal(tests.requete("/connexion").code, 405)
+
+fonction test_les_notes_exigent_un_jeton():
+    reponse = tests.requete("/notes")
+    tests.egal(reponse.code, 401)
+    tests.egal(reponse.entetes["www-authenticate"], "Bearer")
+
+fonction test_un_jeton_modifie_est_refuse():
+    acces = se_connecter()
+    acces["Authorization"] = acces["Authorization"] + "x"
+    tests.egal(tests.requete("/notes", entetes=acces).code, 401)
+
+fonction test_creer_puis_lire_une_note():
+    acces = se_connecter()
+    creee = tests.requete("/notes", json={"texte": "Acheter du pain"}, entetes=acces)
+    tests.egal(creee.code, 201)
+    tests.egal(creee.json(), {"id": 1, "texte": "Acheter du pain"})
+    liste = tests.requete("/notes", entetes=acces)
+    tests.egal(liste.json(), [{"id": 1, "texte": "Acheter du pain"}])
+    tests.egal(tests.requete("/notes/1", entetes=acces).json()["texte"], "Acheter du pain")
+
+fonction test_modifier_une_note():
+    acces = se_connecter()
+    tests.requete("/notes", json={"texte": "Avant"}, entetes=acces)
+    modifiee = tests.requete("/notes/1", json={"texte": "Après"}, methode="PUT", entetes=acces)
+    tests.egal(modifiee.code, 200)
+    tests.egal(modifiee.json()["texte"], "Après")
+
+fonction test_supprimer_une_note():
+    acces = se_connecter()
+    tests.requete("/notes", json={"texte": "A supprimer"}, entetes=acces)
+    tests.egal(tests.requete("/notes/1", methode="DELETE", entetes=acces).code, 204)
+    tests.egal(tests.requete("/notes/1", entetes=acces).code, 404)
+
+fonction test_texte_vide_refuse():
+    acces = se_connecter()
+    tests.egal(tests.requete("/notes", json={"texte": "   "}, entetes=acces).code, 400)
+    tests.egal(tests.requete("/notes", json={"autre": 1}, entetes=acces).code, 400)
+
+fonction test_methodes_non_permises():
+    acces = se_connecter()
+    tests.egal(tests.requete("/notes", methode="DELETE", entetes=acces).code, 405)
+    tests.egal(tests.requete("/notes/1", json={}, methode="PATCH", entetes=acces).code, 405)
+
+fonction test_un_jeton_de_lecture_ne_peut_pas_ecrire():
+    lecteur = securite.creer_jeton_acces("lecteur", api_mobile.CLE, 3600, ["lecture"])
+    acces = {"Authorization": "Bearer " + lecteur}
+    tests.egal(tests.requete("/notes", entetes=acces).code, 200)
+    tests.egal(tests.requete("/notes", json={"texte": "x"}, entetes=acces).code, 403)
+
+fonction test_cors_pour_une_application_autorisee():
+    entetes = {"Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "Authorization, Content-Type"}
+    reponse = tests.requete("/notes", methode="OPTIONS", entetes=entetes)
+    tests.egal(reponse.code, 204)
+    tests.egal(reponse.entetes["access-control-allow-origin"], "http://localhost:3000")
+    entetes["Origin"] = "https://pirate.org"
+    tests.egal(tests.requete("/notes", methode="OPTIONS", entetes=entetes).code, 403)
+
+fonction test_la_documentation_decrit_l_api():
+    donnees = tests.requete("/documentation.json").json()
+    adresses = [a["adresse"] pour a dans donnees["adresses"]]
+    tests.contient(adresses, "/notes/<id:entier>")
+    tests.est_faux("/documentation" dans adresses)

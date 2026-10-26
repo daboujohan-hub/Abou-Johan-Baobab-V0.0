@@ -262,3 +262,20 @@ Pour vérifier tout le projet : `python -m unittest discover tests`
 - `docs/cahier-des-charges.md` : ce qui est fait et ce qui vient
 - `exemples/` : des programmes à lire et à modifier
 - `README.md` : la présentation du projet
+
+## 12. Une API pour une application mobile (version 0.15.0)
+
+Une application (Android, iPhone, Flutter, React Native, un site JavaScript) parle à ton serveur
+en JSON. Le modèle complet est dans `exemples/api_mobile.bao`.
+
+    demande.json                      le JSON reçu (dictionnaire ou liste), 400 s'il est invalide
+    serveur.route(adresse, f, methodes=["GET", "PUT", "DELETE"])    les méthodes permises (sinon 405)
+    serveur.refuser(404, "Introuvable")                             une erreur propre, en JSON
+    serveur.repondre(contenu, code=201)                             choisir le code de réponse
+    securite.creer_jeton_acces("awa", CLE, 3600, ["lecture"])       fabriquer un jeton
+    serveur.exiger_jeton(demande, CLE, "lecture")                   exiger un jeton (401 ou 403 sinon)
+    serveur.autoriser_origines(["https://monsite.org"])             CORS : quels sites web ont le droit
+    tests.requete("/notes", json={...}, methode="PUT", entetes={...})   tester tout cela
+
+Règles : HTTPS en ligne ; jeton à durée courte ; clé hors du code ; aucun secret dans un jeton
+(il est signé mais lisible) ; CORS ne protège que les navigateurs.
