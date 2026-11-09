@@ -26,3 +26,8 @@ build/
 dist/
 membres.db
 test_membres.db
+diagnostic*.log
+resultat.log
+srv.log
+*.bak
+*.bak2
