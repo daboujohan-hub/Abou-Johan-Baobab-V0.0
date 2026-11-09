@@ -1,0 +1,50 @@
+importer tests
+importer serveur
+importer notes_installable
+
+fonction avant_chaque():
+    notes_installable.NOTES.vider()
+    serveur._limites.vider()
+
+fonction test_page_d_accueil_installable():
+    reponse = tests.requete("/")
+    tests.egal(reponse.code, 200)
+    tests.contient(reponse.texte, "Mes notes")
+    tests.contient(reponse.texte, "manifest.webmanifest")
+
+fonction test_manifeste():
+    reponse = tests.requete("/manifest.webmanifest")
+    tests.egal(reponse.entetes["content-type"], "application/manifest+json")
+    tests.egal(reponse.json()["name"], "Mes notes")
+
+fonction test_page_hors_ligne():
+    reponse = tests.requete("/hors-ligne")
+    tests.egal(reponse.code, 200)
+    tests.contient(reponse.texte, "Pas de connexion")
+
+fonction test_ajouter_une_note():
+    reponse = tests.requete("/ajouter", {"texte": "Acheter du pain"})
+    tests.egal(reponse.code, 303)
+    tests.egal(reponse.adresse, "/")
+    tests.contient(tests.requete("/").texte, "Acheter du pain")
+
+fonction test_note_trop_courte_refusee():
+    reponse = tests.requete("/ajouter", {"texte": "a"})
+    tests.egal(reponse.code, 422)
+    tests.contient(reponse.texte, "2 caractères minimum")
+
+fonction test_html_neutralise():
+    tests.requete("/ajouter", {"texte": "<script>x</script>"})
+    accueil = tests.requete("/").texte
+    tests.contient(accueil, "&lt;script&gt;")
+    tests.ne_contient_pas(accueil, "<script>x")
+
+fonction test_dix_ajouts_par_minute():
+    pour i dans intervalle(10):
+        tests.egal(tests.requete("/ajouter", {"texte": "note " + chaine(i)}).code, 303)
+    reponse = tests.requete("/ajouter", {"texte": "de trop"})
+    tests.egal(reponse.code, 429)
+    tests.contient(reponse.entetes, "retry-after")
+
+fonction test_ajouter_exige_un_formulaire():
+    tests.egal(tests.requete("/ajouter").code, 405)

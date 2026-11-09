@@ -1,0 +1,31 @@
+importer serveur
+
+NOTES = []      # la liste des notes (gardée en mémoire : perdue au redémarrage)
+
+# Le site devient installable sur l'écran d'accueil du téléphone
+serveur.application_installable("Mes notes", couleur="#1b5e20", description="Un carnet de notes installable")
+
+REGLES = {"texte": {"min": 2, "max": 200}}
+
+fonction accueil(parametres, demande):
+    """La page d'accueil : la liste des notes et le formulaire."""
+    liste = serveur.repeter("<li>{{element}}</li>", NOTES)
+    contenu = serveur.modele("<h1>Mes notes</h1><ul>{{liste|brut}}</ul><form method='post' action='/ajouter'><input name='texte' placeholder='Une note' required><button>Ajouter</button></form>", {"liste": liste})
+    retourner serveur.page("Mes notes", contenu)
+
+fonction ajouter_note(parametres, demande):
+    """Ajoute une note (formulaire). Limite : 10 ajouts par minute et par visiteur."""
+    serveur.limiter(demande, "ajout", 10, 60)
+    essayer:
+        valide = serveur.valider(parametres, REGLES)
+    sauf serveur.ErreurHTTP comme erreur:
+        refus = serveur.modele("<h1>Note refusée</h1><p>{{texte}}</p><p><a href='/'>Retour</a></p>", {"texte": erreur.details["texte"]})
+        retourner serveur.repondre(serveur.page("Erreur", refus), code=422)
+    NOTES.ajouter(valide["texte"])
+    retourner serveur.rediriger("/")
+
+serveur.route("/", accueil)
+serveur.route("/ajouter", ajouter_note, methodes=["POST"])
+
+si programme_principal:
+    serveur.demarrer(8000)

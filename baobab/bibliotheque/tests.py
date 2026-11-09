@@ -141,7 +141,7 @@ def _obtenir_serveur():
         return _serveur
 
 
-def requete(chemin, donnees=None, entetes=None, cookies=None):
+def requete(chemin, donnees=None, entetes=None, cookies=None, json=None, methode=None):
     """Visite une page de ton application, sans navigateur.
 
     Sans données : visite (GET).  Avec un dictionnaire : envoie un formulaire (POST).
@@ -153,11 +153,18 @@ def requete(chemin, donnees=None, entetes=None, cookies=None):
         envoyes["Cookie"] = _en_tete_cookie(cookies)
     connexion = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
     try:
-        if donnees is None:
-            connexion.request("GET", chemin, headers=envoyes)
-        else:
+        if json is not None and donnees is not None:
+            raise ValueError("Choisis : un formulaire (donnees) ou du JSON, pas les deux")
+        corps = None
+        if json is not None:
+            import json as _json
+            corps = _json.dumps(json)
+            envoyes.setdefault("Content-Type", "application/json")
+        elif donnees is not None:
+            corps = urllib.parse.urlencode(donnees)
             envoyes["Content-Type"] = "application/x-www-form-urlencoded"
-            connexion.request("POST", chemin, body=urllib.parse.urlencode(donnees), headers=envoyes)
+        verbe = (methode or ("GET" if corps is None else "POST")).upper()
+        connexion.request(verbe, chemin, body=corps, headers=envoyes)
         reponse = connexion.getresponse()
         texte = reponse.read().decode("utf-8")
         return Reponse(
@@ -183,9 +190,9 @@ class Navigateur:
         for nom in reponse.cookies_effaces:
             self.cookies.pop(nom, None)
 
-    def requete(self, chemin, donnees=None, entetes=None, suivre=False):
+    def requete(self, chemin, donnees=None, entetes=None, suivre=False, json=None, methode=None):
         """Comme tests.requete, avec ses cookies. suivre=vrai suit les redirections."""
-        reponse = requete(chemin, donnees, entetes, self.cookies)
+        reponse = requete(chemin, donnees, entetes, self.cookies, json=json, methode=methode)
         self._retenir(reponse)
         redirections = 0
         while (suivre and reponse.code in (301, 302, 303, 307, 308)
