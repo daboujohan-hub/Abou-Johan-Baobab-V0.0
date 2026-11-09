@@ -68,6 +68,7 @@ def _analyser(jetons):
     dernier_module = None
     precedent = ""
     blanc = ""  # indentation de la ligne en cours
+    en_attente = None
     en_methode = False  # la fonction en cours est-elle indentée (méthode) ?
     for type_jeton, valeur in jetons:
         if type_jeton == "MOT" and valeur == "fonction":
@@ -93,8 +94,17 @@ def _analyser(jetons):
             elif (ligne_import and precedent == "comme"
                     and dernier_module and _est_natif(dernier_module)):
                 natifs.add(valeur)  # importer base comme b
-            if precedent == "fonction" and valeur not in MOTS_CLES and en_methode:
-                definis.add(valeur)
+            if precedent == "fonction" and valeur not in MOTS_CLES:
+                if en_methode:
+                    definis.add(valeur)
+                else:
+                    en_attente = valeur  # méthode si le premier paramètre est « soi »
+            elif en_attente is not None:
+                if valeur == "soi":
+                    definis.add(en_attente)
+                    en_attente = None
+                elif type_jeton == "MOT" or ")" in valeur:
+                    en_attente = None
         if not valeur.isspace():
             precedent = valeur
     return definis, modules, natifs, _noms_du_programmeur(jetons)
