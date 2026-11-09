@@ -67,7 +67,18 @@ def _analyser(jetons):
     ligne_import = False
     dernier_module = None
     precedent = ""
+    blanc = ""  # indentation de la ligne en cours
+    en_methode = False  # la fonction en cours est-elle indentée (méthode) ?
     for type_jeton, valeur in jetons:
+        if type_jeton == "MOT" and valeur == "fonction":
+            en_methode = bool(blanc)
+        if type_jeton == "AUTRE" and "\n" in valeur:
+            reste = valeur.rsplit("\n", 1)[1]
+            blanc = reste if not reste.strip() else ""
+        elif type_jeton == "AUTRE" and valeur.isspace():
+            blanc += valeur
+        elif not valeur.isspace():
+            blanc = ""
         if type_jeton == "AUTRE" and "\n" in valeur:
             ligne_import = False
             dernier_module = None
@@ -82,7 +93,7 @@ def _analyser(jetons):
             elif (ligne_import and precedent == "comme"
                     and dernier_module and _est_natif(dernier_module)):
                 natifs.add(valeur)  # importer base comme b
-            if precedent == "fonction" and valeur not in MOTS_CLES:
+            if precedent == "fonction" and valeur not in MOTS_CLES and en_methode:
                 definis.add(valeur)
         if not valeur.isspace():
             precedent = valeur
