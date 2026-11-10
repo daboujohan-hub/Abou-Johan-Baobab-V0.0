@@ -1,0 +1,10 @@
+importer tests
+importer nombres
+
+fonction test_en_lettres():
+    tests.egal(nombres.en_lettres(1500), "mille cinq cents")
+    tests.egal(nombres.en_lettres(71), "soixante et onze")
+
+fonction test_monnaie():
+    tests.egal(nombres.formater_monnaie(5000), "5 000 FCFA")
+    tests.egal(nombres.formater_nombre(1500000), "1 500 000")

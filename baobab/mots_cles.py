@@ -185,3 +185,6 @@ _NOUVELLES_METHODES = {
 for _fr, _py in _NOUVELLES_METHODES.items():
     ATTRIBUTS.setdefault(_fr, _py)
 _METHODES_IGNOREES = [_fr for _fr, _py in _NOUVELLES_METHODES.items() if ATTRIBUTS.get(_fr) != _py]
+
+
+MODULES["nombres"] = "baobab_nombres"
