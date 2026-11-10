@@ -10,6 +10,25 @@
 import csv
 import json
 import os
+import re
+
+
+JSON_PROFONDEUR_MAX = 100
+_STRUCTURE_JSON = re.compile(r'"(?:[^"\\]|\\.)*"|[\[\]{}]')
+
+
+def _json_pas_trop_profond(texte, maximum=JSON_PROFONDEUR_MAX):
+    """Faux si le JSON a plus de `maximum` niveaux (les crochets dans les textes ne comptent pas)."""
+    profondeur = 0
+    for morceau in _STRUCTURE_JSON.finditer(texte):
+        signe = morceau.group()
+        if signe == "[" or signe == "{":
+            profondeur += 1
+            if profondeur > maximum:
+                return False
+        elif signe == "]" or signe == "}":
+            profondeur -= 1
+    return True
 
 
 def vers_json(valeur):
@@ -19,12 +38,18 @@ def vers_json(valeur):
 
 def depuis_json(texte):
     """Transforme un texte JSON en liste, dictionnaire, nombre..."""
+    if isinstance(texte, (bytes, bytearray)):
+        verifie = bytes(texte).decode("utf-8", "replace")
+    else:
+        verifie = texte
+    if isinstance(verifie, str) and not _json_pas_trop_profond(verifie):
+        raise ValueError("Le JSON est trop profond (maximum " + str(JSON_PROFONDEUR_MAX) + " niveaux)")
     return json.loads(texte)
 
 
 def lire_json(chemin):
     with open(chemin, encoding="utf-8") as fichier:
-        return json.load(fichier)
+        return depuis_json(fichier.read())
 
 
 def ecrire_json(chemin, valeur):
