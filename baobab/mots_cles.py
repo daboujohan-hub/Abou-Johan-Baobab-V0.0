@@ -188,3 +188,6 @@ _METHODES_IGNOREES = [_fr for _fr, _py in _NOUVELLES_METHODES.items() if ATTRIBU
 
 
 MODULES["nombres"] = "baobab_nombres"
+
+
+MODULES["calendrier"] = "baobab_calendrier"

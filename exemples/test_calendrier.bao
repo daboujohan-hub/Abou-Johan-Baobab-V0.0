@@ -1,0 +1,9 @@
+importer tests
+importer calendrier
+
+fonction test_jour():
+    tests.egal(calendrier.jour_de_la_semaine(2026, 11, 10), "mardi")
+    tests.egal(calendrier.formater_date(2026, 1, 1), "jeudi 1er janvier 2026")
+
+fonction test_jours_entre():
+    tests.egal(calendrier.jours_entre(2026, 11, 10, 2026, 12, 25), 45)
