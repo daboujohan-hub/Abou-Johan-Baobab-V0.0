@@ -14,6 +14,7 @@ Seules les adresses http:// et https:// sont acceptées (jamais file://).
 Tes en-têtes personnalisés (jetons, clés...) ne suivent jamais une redirection vers un autre site.
 """
 
+import ipaddress
 import json
 import os
 import re
@@ -88,10 +89,34 @@ def _preparer_entetes(entetes):
     return propres
 
 
+def _est_local(url):
+    """Vrai pour localhost, 127.x.x.x et ::1 (ton propre appareil)."""
+    hote = (urllib.parse.urlsplit(url).hostname or "").lower()
+    if hote == "localhost" or hote.endswith(".localhost"):
+        return True
+    try:
+        return ipaddress.ip_address(hote).is_loopback
+    except ValueError:
+        return False
+
+
+def _refuser_secret_en_clair(url, entetes):
+    """Pas de secret (jeton, cookie) sur http:// : il serait lisible par n'importe qui sur le réseau."""
+    if urllib.parse.urlsplit(url).scheme != "http" or _est_local(url):
+        return
+    interdits = {nom.lower() for nom in _SECRETS_TOUJOURS}
+    trouves = [nom for nom in entetes if nom.lower() in interdits]
+    if trouves:
+        raise ValueError(
+            "Refusé : l'en-tête secret (" + ", ".join(trouves) + ") ne part pas sur une adresse "
+            "http:// : n'importe qui sur le réseau pourrait le lire. Utilise https://")
+
+
 def _ouvrir(url, delai, entetes=None, donnees=None, type_contenu=None, methode=None):
     from baobab import __version__
 
     propres = _preparer_entetes(entetes)
+    _refuser_secret_en_clair(_verifier(url), propres)
     envoyes = {"User-Agent": f"Baobab/{__version__}", "Accept": "*/*"}
     envoyes.update(propres)
     if type_contenu and not any(nom.lower() == "content-type" for nom in propres):
