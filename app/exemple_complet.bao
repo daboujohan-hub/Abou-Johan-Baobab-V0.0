@@ -1,0 +1,28 @@
+importer nombres
+importer calendrier
+
+fonction controler(nom_test, obtenu, attendu):
+    si obtenu == attendu:
+        afficher("✅", nom_test)
+    si obtenu != attendu:
+        afficher("❌", nom_test, "obtenu :", obtenu)
+
+controler("hexadecimal", hexadecimal(255), "0xff")
+controler("binaire", binaire(5), "0b101")
+controler("nombres.en_lettres", nombres.en_lettres(1500), "mille cinq cents")
+controler("nombres.formater_monnaie", nombres.formater_monnaie(5000), "5 000 FCFA")
+controler("calendrier.formater_date", calendrier.formater_date(2026, 11, 10), "mardi 10 novembre 2026")
+controler("calendrier.jours_entre", calendrier.jours_entre(2026, 11, 10, 2026, 12, 25), 45)
+controler("remplir_zeros", "5".remplir_zeros(3), "005")
+ens = {1, 2}
+ens.ajouter_element(3)
+controler("ensemble union_avec", ens.union_avec({9}), {1, 2, 3, 9})
+controler("partitionner", "a-b".partitionner("-"), ("a", "-", "b"))
+ma_liste = [3, 1, 2]
+ma_liste.trier()
+controler("trier", ma_liste, [1, 2, 3])
+notes = []
+fonction ajouter(x):
+    notes.ajouter(x)
+ajouter("a")
+controler("fonction nommee ajouter", notes, ["a"])

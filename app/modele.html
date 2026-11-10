@@ -89,6 +89,7 @@ label{display:block;margin:.9em 0 .2em}
   <button id="btn-annuler" class="secondaire">↶</button>
   <button id="btn-refaire" class="secondaire">↷</button>
   <button id="btn-effacer-console" class="secondaire">Effacer</button>
+  <button id="btn-test-complet" class="secondaire py">🧪 Test complet</button>
   <h2>Console</h2>
   <pre id="console"></pre>
 </section>
@@ -117,6 +118,7 @@ label{display:block;margin:.9em 0 .2em}
 </nav>
 
 <script type="application/json" id="donnees-sources">__SOURCES__</script>
+<script type="application/json" id="donnees-exemple">__EXEMPLE__</script>
 <script type="application/json" id="donnees-lecons">__LECONS__</script>
 <script type="text/plain" id="code-harnais">__HARNAIS__</script>
 <script type="text/plain" id="code-worker">__WORKER__</script>
@@ -362,6 +364,15 @@ qs("#btn-effacer-console").onclick = () => { qs("#console").textContent = ""; };
 for (const [id, cmd] of [["#btn-annuler", "undo"], ["#btn-refaire", "redo"]]) {
   qs(id).addEventListener("pointerdown", (e) => { e.preventDefault(); ed.focus(); document.execCommand(cmd); });
 }
+
+const EXEMPLE_COMPLET = JSON.parse(document.getElementById("donnees-exemple").textContent);
+qs("#btn-test-complet").onclick = async () => {
+  ed.value = EXEMPLE_COMPLET;
+  ecrire(CLE_CODE, ed.value);
+  qs("#console").textContent = "…";
+  const sortie = await executer(ed.value);
+  qs("#console").textContent = (sortie || "(rien affiché)") + "\n[Programme terminé]";
+};
 
 /* ---------- Paramètres ---------- */
 function appliquerReglages() {

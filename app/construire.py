@@ -54,9 +54,10 @@ page = page.replace("__PYODIDE_BASE__", PYODIDE_BASE)
 page = page.replace("__VERSION__", trouver_version())
 page = page.replace("__HARNAIS__", lire("harnais.py"))
 page = page.replace("__WORKER__", lire("worker.js"))
+page = page.replace("__EXEMPLE__", en_json(lire("exemple_complet.bao")))
 page = page.replace("__LECONS__", en_json(charger_lecons()))
 page = page.replace("__SOURCES__", en_json(fichiers))
-assert not re.search(r"__(SOURCES|HARNAIS|WORKER|LECONS|VERSION|PYODIDE_BASE)__", page), "placeholder restant"
+assert not re.search(r"__(SOURCES|HARNAIS|WORKER|LECONS|EXEMPLE|VERSION|PYODIDE_BASE)__", page), "placeholder restant"
 
 os.makedirs(SORTIE, exist_ok=True)
 with open(os.path.join(SORTIE, "index.html"), "w", encoding="utf-8") as f:
