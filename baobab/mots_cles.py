@@ -141,3 +141,47 @@ for _fr, _py in _NOUVELLES_FONCTIONS.items():
     DICTIONNAIRE.setdefault(_fr, _py)
     if isinstance(FONCTIONS, dict):
         FONCTIONS.setdefault(_fr, _py)
+
+
+# Méthodes Python ajoutées en français (noms distinctifs, sans écraser l'existant)
+_NOUVELLES_METHODES = {
+    # listes, tuples, textes
+    "indice_de": "index", "dernier_indice_de": "rindex",
+    # textes
+    "minuscule_forte": "casefold", "centrer": "center", "encoder": "encode",
+    "developper_tabulations": "expandtabs", "formater_dictionnaire": "format_map",
+    "est_alphanumerique": "isalnum", "est_alphabetique": "isalpha",
+    "est_ascii": "isascii", "est_decimal": "isdecimal", "est_chiffre": "isdigit",
+    "est_identifiant": "isidentifier", "est_minuscule": "islower",
+    "est_numerique": "isnumeric", "est_imprimable": "isprintable",
+    "est_espace": "isspace", "est_titre": "istitle", "est_majuscule": "isupper",
+    "aligner_gauche": "ljust", "aligner_droite": "rjust",
+    "nettoyer_gauche": "lstrip", "nettoyer_droite": "rstrip",
+    "table_traduction": "maketrans", "traduire_caracteres": "translate",
+    "partitionner": "partition", "partitionner_depuis_fin": "rpartition",
+    "enlever_debut": "removeprefix", "enlever_fin": "removesuffix",
+    "trouver_dernier": "rfind", "separer_depuis_fin": "rsplit",
+    "separer_lignes": "splitlines", "inverser_casse": "swapcase",
+    "remplir_zeros": "zfill",
+    # dictionnaires
+    "creer_depuis_cles": "fromkeys", "depiler_element": "popitem",
+    "definir_par_defaut": "setdefault", "mettre_a_jour": "update",
+    # ensembles
+    "ajouter_element": "add", "ecarter": "discard",
+    "difference_avec": "difference", "retirer_difference": "difference_update",
+    "intersection_avec": "intersection", "garder_intersection": "intersection_update",
+    "union_avec": "union", "est_disjoint": "isdisjoint",
+    "est_sous_ensemble": "issubset", "est_sur_ensemble": "issuperset",
+    "difference_symetrique": "symmetric_difference",
+    "garder_difference_symetrique": "symmetric_difference_update",
+    # fichiers
+    "lire": "read", "ecrire": "write", "fermer": "close", "est_ferme": "closed",
+    "lire_ligne": "readline", "lire_lignes": "readlines", "ecrire_lignes": "writelines",
+    "vider_tampon": "flush", "aller_a": "seek", "position_courante": "tell",
+    "tronquer": "truncate", "est_lisible": "readable",
+    "est_modifiable": "writable", "est_positionnable": "seekable",
+    "encodage": "encoding",
+}
+for _fr, _py in _NOUVELLES_METHODES.items():
+    ATTRIBUTS.setdefault(_fr, _py)
+_METHODES_IGNOREES = [_fr for _fr, _py in _NOUVELLES_METHODES.items() if ATTRIBUTS.get(_fr) != _py]
