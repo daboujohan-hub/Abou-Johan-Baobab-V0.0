@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apprendre Baobab</title>
+<style>
+:root{--fond:#f1f7f1;--carte:#ffffff;--texte:#12301a;--accent:#2e7d32;--bord:#c4dcc6;--code:#0b1d0e;--codetxt:#e8f5e9;--taille:16px}
+:root[data-theme="dark"]{--fond:#0e1f12;--carte:#16301b;--texte:#e8f5e9;--accent:#43a047;--bord:#2e5a35;--code:#07140a;--codetxt:#e8f5e9}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--fond);color:var(--texte);font-size:var(--taille);padding-bottom:5rem}
+main{padding:1rem;padding-top:calc(1rem + env(safe-area-inset-top,0px))}
+h1{font-size:1.4em;margin:.2em 0 .8em}
+h2{font-size:1.1em;margin:.9em 0 .3em}
+.ecran{display:none}
+.ecran.actif{display:block}
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:12px;padding:.8rem;margin:.6rem 0}
+button{font:inherit;border:0;border-radius:10px;padding:.7em 1.1em;margin:.25em .25em .25em 0;background:var(--accent);color:#fff}
+button.secondaire{background:var(--carte);color:var(--texte);border:1px solid var(--bord)}
+button.principal{display:block;width:100%;padding:1em}
+button:disabled{opacity:.45}
+textarea{width:100%;height:13em;font:0.9em ui-monospace,Menlo,monospace;padding:.6em;border-radius:10px;border:1px solid var(--bord);background:var(--code);color:var(--codetxt)}
+pre{white-space:pre-wrap;word-break:break-word;background:var(--code);color:var(--codetxt);padding:.7em;border-radius:10px;min-height:2.5em;font:0.9em ui-monospace,Menlo,monospace;margin:.4em 0}
+.barre{height:10px;background:var(--bord);border-radius:6px;overflow:hidden;margin-top:.5em}
+#progression-barre{height:100%;width:0;background:var(--accent)}
+.symboles{display:flex;gap:.3em;overflow-x:auto;padding:.3em 0}
+.symboles button{padding:.45em .8em;margin:0;background:var(--carte);color:var(--texte);border:1px solid var(--bord);flex:none}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--carte);border-top:1px solid var(--bord);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;margin:0;border-radius:0;background:transparent;color:var(--texte);padding:.8em .2em;font-size:.85em}
+nav button.actif{color:var(--accent);font-weight:bold}
+#statut{position:sticky;top:0;z-index:5;background:var(--accent);color:#fff;padding:.5em 1em;font-size:.9em}
+.item{display:block;width:100%;text-align:left;background:var(--carte);color:var(--texte);border:1px solid var(--bord);margin:.4em 0}
+.item small{display:block;opacity:.7}
+.ok{color:#2e9d3a;font-weight:bold}
+.ko{color:#e05a4f;font-weight:bold}
+select{font:inherit;padding:.4em;border-radius:8px}
+label{display:block;margin:.9em 0 .2em}
+</style>
+</head>
+<body>
+<div id="statut" hidden></div>
+<main>
+
+<section id="ecran-accueil" class="ecran">
+  <h1>🌳 Apprendre Baobab</h1>
+  <div class="carte">
+    <div id="progression-texte"></div>
+    <div class="barre"><div id="progression-barre"></div></div>
+  </div>
+  <button id="btn-continuer" class="principal"></button>
+  <button id="btn-vers-editeur" class="secondaire principal">✏️ Ouvrir l'éditeur</button>
+</section>
+
+<section id="ecran-lecons" class="ecran">
+  <h1>Les leçons</h1>
+  <div id="liste-lecons"></div>
+</section>
+
+<section id="ecran-lecon" class="ecran">
+  <button id="btn-retour" class="secondaire">← Leçons</button>
+  <h1 id="lec-titre"></h1>
+  <div id="lec-niveau"></div>
+  <p id="lec-explication"></p>
+  <h2>Exemple</h2>
+  <pre id="lec-exemple"></pre>
+  <button id="btn-exemple" class="secondaire py">▶ Lancer l'exemple</button>
+  <h2>À toi de jouer</h2>
+  <p id="lec-consigne"></p>
+  <p>Tu dois obtenir :</p>
+  <pre id="lec-attendu"></pre>
+  <div class="symboles" data-cible="lec-code"></div>
+  <textarea id="lec-code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+  <button id="btn-valider" class="py">✔ Valider</button>
+  <button id="btn-indice" class="secondaire">💡 Indice</button>
+  <button id="btn-solution" class="secondaire">Solution</button>
+  <div id="lec-message"></div>
+  <pre id="lec-sortie"></pre>
+  <pre id="lec-aide"></pre>
+  <button id="btn-suivante" class="principal" hidden>Leçon suivante →</button>
+</section>
+
+<section id="ecran-editeur" class="ecran">
+  <h1>Éditeur</h1>
+  <div class="symboles" data-cible="editeur-code"></div>
+  <textarea id="editeur-code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+  <button id="btn-executer" class="py">▶ Exécuter</button>
+  <button id="btn-stop" class="secondaire" disabled>■ Arrêter</button>
+  <button id="btn-annuler" class="secondaire">↶</button>
+  <button id="btn-refaire" class="secondaire">↷</button>
+  <button id="btn-effacer-console" class="secondaire">Effacer</button>
+  <h2>Console</h2>
+  <pre id="console"></pre>
+</section>
+
+<section id="ecran-reglages" class="ecran">
+  <h1>Paramètres</h1>
+  <label for="reg-taille">Taille du texte</label>
+  <select id="reg-taille"><option value="petite">Petite</option><option value="moyenne">Moyenne</option><option value="grande">Grande</option></select>
+  <label for="reg-theme">Thème</label>
+  <select id="reg-theme"><option value="auto">Automatique</option><option value="light">Clair</option><option value="dark">Sombre</option></select>
+  <label for="reg-delai">Durée maximale d'exécution</label>
+  <select id="reg-delai"><option value="1">1 seconde</option><option value="3">3 secondes</option><option value="5">5 secondes</option><option value="10">10 secondes</option></select>
+  <h2>Progression</h2>
+  <button id="btn-effacer-progression" class="secondaire">Effacer ma progression</button>
+  <h2>À propos</h2>
+  <div class="carte">Baobab version __VERSION__<br>Application d'apprentissage. Tes données restent sur ton téléphone.</div>
+</section>
+
+</main>
+
+<nav>
+  <button data-ecran="accueil">🏠<br>Accueil</button>
+  <button data-ecran="lecons">📚<br>Leçons</button>
+  <button data-ecran="editeur">✏️<br>Éditeur</button>
+  <button data-ecran="reglages">⚙️<br>Réglages</button>
+</nav>
+
+<script type="application/json" id="donnees-sources">__SOURCES__</script>
+<script type="application/json" id="donnees-lecons">__LECONS__</script>
+<script type="text/plain" id="code-harnais">__HARNAIS__</script>
+<script type="text/plain" id="code-worker">__WORKER__</script>
+<script>
+const BASE = "__PYODIDE_BASE__";
+const SOURCES = JSON.parse(document.getElementById("donnees-sources").textContent);
+const LECONS = JSON.parse(document.getElementById("donnees-lecons").textContent);
+const HARNAIS = document.getElementById("code-harnais").textContent;
+const DISPO = LECONS.filter((l) => !l.bientot);
+const CLE_ETAT = "baobab_etat", CLE_REGL = "baobab_reglages", CLE_CODE = "baobab_code";
+const LONGUEUR_MAX = 5000;
+const qs = (s) => document.querySelector(s);
+
+function lire(cle, defaut) {
+  try { const t = localStorage.getItem(cle); return t ? JSON.parse(t) : defaut; } catch (e) { return defaut; }
+}
+function ecrire(cle, val) {
+  try { localStorage.setItem(cle, JSON.stringify(val)); } catch (e) {}
+}
+let etat = Object.assign({ terminees: {}, codes: {}, essais: {}, derniere: null }, lire(CLE_ETAT, {}));
+let reglages = Object.assign({ taille: "moyenne", theme: "auto", delai: 3 }, lire(CLE_REGL, {}));
+const sauverEtat = () => ecrire(CLE_ETAT, etat);
+const sauverReglages = () => ecrire(CLE_REGL, reglages);
+
+/* ---------- Moteur Baobab (Web Worker) ---------- */
+let worker = null, pret = false, enCours = null, compteur = 0;
+
+function statut(texte) {
+  const s = qs("#statut");
+  s.textContent = texte;
+  s.hidden = !texte;
+}
+function majBoutons() {
+  document.querySelectorAll("button.py").forEach((b) => { b.disabled = !pret || !!enCours; });
+  qs("#btn-stop").disabled = !enCours;
+}
+function demarrerWorker() {
+  pret = false;
+  majBoutons();
+  statut("Chargement de Python… (la première fois : environ 10 Mo)");
+  if (worker) worker.terminate();
+  const blob = new Blob([document.getElementById("code-worker").textContent], { type: "text/javascript" });
+  worker = new Worker(URL.createObjectURL(blob));
+  worker.onmessage = (e) => {
+    const m = e.data;
+    if (m.type === "pret") { pret = true; statut(""); majBoutons(); }
+    else if (m.type === "fini" && enCours && enCours.id === m.id) { terminer(m.sortie); }
+    else if (m.type === "erreur") {
+      if (enCours && enCours.id === m.id) terminer("Erreur : " + m.message);
+      else statut("Erreur de chargement : " + m.message);
+    }
+  };
+  worker.onerror = (e) => statut("Erreur du moteur : " + e.message);
+  worker.postMessage({ type: "init", pyodideUrl: BASE + "pyodide.js", indexURL: BASE, sources: SOURCES, harnais: HARNAIS });
+}
+function coupe(texte) {
+  texte = String(texte == null ? "" : texte);
+  return texte.length > LONGUEUR_MAX ? texte.slice(0, LONGUEUR_MAX) + "\n… (sortie coupée)" : texte;
+}
+function terminer(sortie) {
+  if (!enCours) return;
+  clearTimeout(enCours.minuterie);
+  const r = enCours.resolve;
+  enCours = null;
+  majBoutons();
+  r(coupe(sortie));
+}
+function arreterMoteur(message) {
+  if (!enCours) return;
+  clearTimeout(enCours.minuterie);
+  const r = enCours.resolve;
+  enCours = null;
+  r(message);
+  demarrerWorker();
+}
+function executer(code) {
+  return new Promise((resolve) => {
+    if (!pret || enCours) { resolve("Python n'est pas encore prêt."); return; }
+    const id = ++compteur;
+    const delai = reglages.delai;
+    const minuterie = setTimeout(() => arreterMoteur("Programme arrêté : plus de " + delai + " secondes."), delai * 1000);
+    enCours = { id, resolve, minuterie };
+    majBoutons();
+    worker.postMessage({ type: "run", id, code });
+  });
+}
+
+/* ---------- Navigation ---------- */
+function aller(nom, navActif) {
+  document.querySelectorAll(".ecran").forEach((e) => e.classList.remove("actif"));
+  qs("#ecran-" + nom).classList.add("actif");
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("actif", b.dataset.ecran === (navActif || nom)));
+  if (nom === "accueil") rendreAccueil();
+  if (nom === "lecons") rendreListe();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav button").forEach((b) => { b.onclick = () => aller(b.dataset.ecran); });
+
+/* ---------- Saisie de code ---------- */
+function insere(ta, t) {
+  ta.focus();
+  ta.setRangeText(t, ta.selectionStart, ta.selectionEnd, "end");
+  ta.dispatchEvent(new Event("input"));
+}
+function outilsCode(id) {
+  const ta = document.getElementById(id);
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") { e.preventDefault(); insere(ta, "    "); }
+  });
+  const barre = document.querySelector('.symboles[data-cible="' + id + '"]');
+  const symboles = [["Tab", "    "], [":", ":"], ["(", "("], [")", ")"], ['"', '"'], ["'", "'"], ["#", "#"], ["=", "="], ["[", "["], ["]", "]"], ["{", "{"], ["}", "}"]];
+  symboles.forEach(([etiquette, texte]) => {
+    const b = document.createElement("button");
+    b.textContent = etiquette;
+    b.addEventListener("pointerdown", (e) => { e.preventDefault(); insere(ta, texte); });
+    barre.appendChild(b);
+  });
+}
+
+/* ---------- Accueil ---------- */
+function prochaineLecon() {
+  return DISPO.find((l) => !etat.terminees[l.id]) || null;
+}
+function rendreAccueil() {
+  const faites = DISPO.filter((l) => etat.terminees[l.id]).length;
+  qs("#progression-texte").textContent = faites + " sur " + DISPO.length + " leçons terminées";
+  qs("#progression-barre").style.width = (DISPO.length ? (100 * faites) / DISPO.length : 0) + "%";
+  const suite = prochaineLecon();
+  const b = qs("#btn-continuer");
+  b.textContent = suite ? "▶ Continuer : " + suite.titre : "🎉 Tout est terminé ! Revoir les leçons";
+  b.onclick = () => (suite ? ouvrirLecon(suite.id) : aller("lecons"));
+}
+qs("#btn-vers-editeur").onclick = () => aller("editeur");
+
+/* ---------- Liste des leçons ---------- */
+function rendreListe() {
+  const conteneur = qs("#liste-lecons");
+  conteneur.textContent = "";
+  LECONS.forEach((l, i) => {
+    const b = document.createElement("button");
+    b.className = "item";
+    const titre = document.createElement("span");
+    titre.textContent = (i + 1) + ". " + l.titre;
+    const detail = document.createElement("small");
+    let etatTexte = "À faire";
+    if (l.bientot) etatTexte = "Bientôt";
+    else if (etat.terminees[l.id]) etatTexte = "✅ Terminée";
+    else if (etat.codes[l.id]) etatTexte = "En cours";
+    detail.textContent = l.niveau + " · " + etatTexte;
+    b.append(titre, detail);
+    if (l.bientot) b.disabled = true;
+    else b.onclick = () => ouvrirLecon(l.id);
+    conteneur.appendChild(b);
+  });
+}
+
+/* ---------- Leçon ---------- */
+let lecCourante = null;
+function ouvrirLecon(id) {
+  const l = LECONS.find((x) => x.id === id);
+  if (!l || l.bientot) return;
+  lecCourante = l;
+  etat.derniere = id;
+  sauverEtat();
+  qs("#lec-titre").textContent = l.titre;
+  qs("#lec-niveau").textContent = l.niveau;
+  qs("#lec-explication").textContent = l.explication;
+  qs("#lec-exemple").textContent = l.exemple;
+  qs("#lec-consigne").textContent = l.consigne;
+  qs("#lec-attendu").textContent = l.attendu;
+  qs("#lec-code").value = etat.codes[id] !== undefined ? etat.codes[id] : l.depart;
+  qs("#lec-sortie").textContent = "";
+  qs("#lec-message").textContent = "";
+  qs("#lec-aide").textContent = "";
+  qs("#btn-suivante").hidden = true;
+  aller("lecon", "lecons");
+}
+function message(texte, ok) {
+  const m = qs("#lec-message");
+  m.textContent = texte;
+  m.className = ok ? "ok" : "ko";
+}
+function normaliser(t) {
+  return String(t).replace(/\r/g, "").split("\n").map((l) => l.replace(/\s+$/, "")).join("\n").trim();
+}
+qs("#lec-code").addEventListener("input", () => {
+  if (!lecCourante) return;
+  etat.codes[lecCourante.id] = qs("#lec-code").value;
+  sauverEtat();
+});
+qs("#btn-retour").onclick = () => aller("lecons");
+qs("#btn-exemple").onclick = async () => {
+  qs("#lec-sortie").textContent = "…";
+  qs("#lec-sortie").textContent = (await executer(lecCourante.exemple)) || "(rien affiché)";
+};
+qs("#btn-valider").onclick = async () => {
+  const l = lecCourante;
+  const code = qs("#lec-code").value;
+  etat.codes[l.id] = code;
+  etat.essais[l.id] = (etat.essais[l.id] || 0) + 1;
+  sauverEtat();
+  qs("#lec-sortie").textContent = "…";
+  const sortie = await executer(code);
+  qs("#lec-sortie").textContent = sortie || "(rien affiché)";
+  const manquants = (l.exige || []).filter((s) => !code.includes(s));
+  if (manquants.length) {
+    message("Ton code doit utiliser : " + manquants.join(" "), false);
+  } else if (normaliser(sortie) === normaliser(l.attendu)) {
+    etat.terminees[l.id] = true;
+    sauverEtat();
+    message("Bravo ! Exercice réussi 🎉", true);
+    const i = DISPO.findIndex((x) => x.id === l.id);
+    const suivante = DISPO[i + 1];
+    if (suivante) {
+      const b = qs("#btn-suivante");
+      b.textContent = "Leçon suivante : " + suivante.titre + " →";
+      b.onclick = () => ouvrirLecon(suivante.id);
+      b.hidden = false;
+    }
+  } else {
+    message("Pas encore. Compare ta sortie avec le résultat attendu.", false);
+  }
+};
+qs("#btn-indice").onclick = () => { qs("#lec-aide").textContent = "💡 " + lecCourante.indice; };
+qs("#btn-solution").onclick = () => {
+  const n = etat.essais[lecCourante.id] || 0;
+  qs("#lec-aide").textContent = (n >= 3 || etat.terminees[lecCourante.id])
+    ? "Solution :\n" + lecCourante.solution
+    : "La solution s'affiche après 3 essais (" + n + "/3).";
+};
+
+/* ---------- Éditeur ---------- */
+const ed = qs("#editeur-code");
+ed.value = lire(CLE_CODE, 'afficher("Bonjour depuis Baobab !")');
+ed.addEventListener("input", () => ecrire(CLE_CODE, ed.value));
+qs("#btn-executer").onclick = async () => {
+  qs("#console").textContent = "…";
+  const sortie = await executer(ed.value);
+  qs("#console").textContent = (sortie || "(le programme n'a rien affiché)") + "\n[Programme terminé]";
+};
+qs("#btn-stop").onclick = () => arreterMoteur("Programme arrêté.");
+qs("#btn-effacer-console").onclick = () => { qs("#console").textContent = ""; };
+for (const [id, cmd] of [["#btn-annuler", "undo"], ["#btn-refaire", "redo"]]) {
+  qs(id).addEventListener("pointerdown", (e) => { e.preventDefault(); ed.focus(); document.execCommand(cmd); });
+}
+
+/* ---------- Paramètres ---------- */
+function appliquerReglages() {
+  const tailles = { petite: "14px", moyenne: "16px", grande: "19px" };
+  document.documentElement.style.setProperty("--taille", tailles[reglages.taille] || "16px");
+  let theme = reglages.theme;
+  if (theme === "auto") theme = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", theme);
+}
+qs("#reg-taille").value = reglages.taille;
+qs("#reg-theme").value = reglages.theme;
+qs("#reg-delai").value = String(reglages.delai);
+qs("#reg-taille").onchange = (e) => { reglages.taille = e.target.value; sauverReglages(); appliquerReglages(); };
+qs("#reg-theme").onchange = (e) => { reglages.theme = e.target.value; sauverReglages(); appliquerReglages(); };
+qs("#reg-delai").onchange = (e) => { reglages.delai = parseInt(e.target.value, 10) || 3; sauverReglages(); };
+qs("#btn-effacer-progression").onclick = () => {
+  if (confirm("Effacer toute ta progression ? Cette action est définitive.")) {
+    etat = { terminees: {}, codes: {}, essais: {}, derniere: null };
+    sauverEtat();
+    rendreAccueil();
+  }
+};
+
+/* ---------- Démarrage ---------- */
+outilsCode("lec-code");
+outilsCode("editeur-code");
+appliquerReglages();
+aller("accueil");
+demarrerWorker();
+</script>
+</body>
+</html>
