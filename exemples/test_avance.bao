@@ -1,0 +1,10 @@
+importer tests
+importer avance
+
+fonction test_evaluer():
+    tests.egal(avance.evaluer("2 + 3"), 5)
+    tests.egal(avance.evaluer("x * 2", {"x": 21}), 42)
+
+fonction test_lire_valeur_sure():
+    tests.egal(avance.lire_valeur("[1, 2, 3]"), [1, 2, 3])
+    tests.egal(avance.lire_valeur("42"), 42)

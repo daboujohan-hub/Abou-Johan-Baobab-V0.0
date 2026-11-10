@@ -191,3 +191,17 @@ MODULES["nombres"] = "baobab_nombres"
 
 
 MODULES["calendrier"] = "baobab_calendrier"
+
+
+# Attributs de fichiers (noms distinctifs, sans écraser l'existant)
+_ATTRIBUTS_FICHIERS = {
+    "nom_du_fichier": "name", "tampon": "buffer", "numero_descripteur": "fileno",
+    "erreurs_encodage": "errors", "detacher_tampon": "detach", "est_terminal": "isatty",
+    "tampon_par_ligne": "line_buffering", "fins_de_ligne": "newlines",
+    "reconfigurer": "reconfigure", "ecriture_directe": "write_through",
+}
+for _fr, _py in _ATTRIBUTS_FICHIERS.items():
+    ATTRIBUTS.setdefault(_fr, _py)
+_ATTRIBUTS_FICHIERS_IGNORES = [_fr for _fr, _py in _ATTRIBUTS_FICHIERS.items() if ATTRIBUTS.get(_fr) != _py]
+
+MODULES["avance"] = "baobab_avance"
