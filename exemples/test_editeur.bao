@@ -1,0 +1,38 @@
+importer tests
+importer serveur
+importer editeur
+
+fonction avant_chaque():
+    serveur._limites.vider()
+
+fonction lancer_programme(texte_prog):
+    retourner tests.requete("/executer", {"cle": editeur.CLE, "programme": texte_prog})
+
+fonction test_page_d_accueil():
+    reponse = tests.requete("/")
+    tests.egal(reponse.code, 200)
+    tests.contient(reponse.texte, "Éditeur Baobab")
+    tests.contient(reponse.texte, "manifest.webmanifest")
+
+fonction test_executer_un_programme():
+    reponse = lancer_programme('afficher("bonjour-" + "test")')
+    tests.egal(reponse.code, 200)
+    tests.contient(reponse.texte, "bonjour-test")
+
+fonction test_mauvaise_cle_refusee():
+    reponse = tests.requete("/executer", {"cle": "pas-la-bonne", "programme": 'afficher("sec" + "ret")'})
+    tests.egal(reponse.code, 403)
+    tests.contient(reponse.texte, "incorrecte")
+    tests.egal("secret" dans reponse.texte, faux)
+
+fonction test_html_neutralise():
+    reponse = lancer_programme('afficher("<b>gras</b>")')
+    tests.contient(reponse.texte, "&lt;b&gt;gras&lt;/b&gt;")
+    tests.egal("<b>gras</b>" dans reponse.texte, faux)
+
+fonction test_programme_trop_long_arrete():
+    reponse = lancer_programme("importer time\ntime.sleep(30)")
+    tests.contient(reponse.texte, "Programme arrêté")
+
+fonction test_executer_exige_un_formulaire():
+    tests.egal(tests.requete("/executer").code, 405)

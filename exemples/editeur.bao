@@ -1,0 +1,64 @@
+importer serveur
+importer secrets
+importer subprocess
+importer tempfile
+importer pathlib
+importer shutil
+
+CLE = secrets.token_hex(8)   # clé d'accès, affichée dans le terminal au démarrage
+DELAI = 3                    # secondes maximum par programme
+LONGUEUR_MAX = 5000          # taille maximum de la sortie affichée
+EXEMPLE = 'afficher("Bonjour depuis Baobab !")'
+
+serveur.application_installable("Éditeur Baobab", couleur="#1b5e20", description="Écris et lance du Baobab depuis ton téléphone")
+
+MODELE = (
+    "<h1>🌳 Éditeur Baobab</h1>"
+    "<form method='post' action='/executer'>"
+    "<p><input name='cle' type='password' placeholder='Clé' value='{{cle}}' required></p>"
+    "<p><textarea name='programme' rows='12' spellcheck='false' required>{{programme}}</textarea></p>"
+    "<button>▶ Exécuter</button></form>"
+    "<h2>Résultat</h2><pre>{{sortie}}</pre>"
+)
+
+fonction afficher_page(cle_saisie, texte_prog, sortie_prog, code_http=200):
+    contenu = serveur.modele(MODELE, {"cle": cle_saisie, "programme": texte_prog, "sortie": sortie_prog})
+    retourner serveur.repondre(serveur.page("Éditeur Baobab", contenu), code=code_http)
+
+fonction accueil(parametres, demande):
+    """La page de l'éditeur."""
+    retourner afficher_page("", EXEMPLE, "")
+
+fonction executer(parametres, demande):
+    """Lance le programme saisi (temps limité) et affiche ce qu'il écrit."""
+    serveur.limiter(demande, "executer", 20, 60)
+    cle_saisie = parametres.get("cle", "")
+    texte_prog = parametres.get("programme", "")
+    cle_valide = secrets.compare_digest(cle_saisie.encode("utf-8"), CLE.encode("utf-8"))
+    si cle_valide == faux:
+        retourner afficher_page("", texte_prog, "Clé incorrecte.", 403)
+    si longueur(texte_prog) > 20000:
+        retourner afficher_page(cle_saisie, "", "Programme trop long (20 000 caractères maximum).", 413)
+    dossier_tmp = tempfile.mkdtemp()
+    chemin_prog = pathlib.Path(dossier_tmp) / "programme.bao"
+    chemin_prog.write_text(texte_prog, encoding="utf-8")
+    essayer:
+        termine = subprocess.run(["baobab", "lancer", chaine(chemin_prog)], capture_output=vrai, encoding="utf-8", errors="replace", timeout=DELAI, cwd=dossier_tmp)
+        sortie_prog = termine.stdout + termine.stderr
+    sauf subprocess.TimeoutExpired comme erreur:
+        sortie_prog = "Programme arrêté : plus de " + chaine(DELAI) + " secondes."
+    shutil.rmtree(dossier_tmp, ignore_errors=vrai)
+    si sortie_prog == "":
+        sortie_prog = "(le programme n'a rien affiché)"
+    si longueur(sortie_prog) > LONGUEUR_MAX:
+        sortie_prog = sortie_prog[:LONGUEUR_MAX] + "\n… (sortie coupée)"
+    retourner afficher_page(cle_saisie, texte_prog, sortie_prog)
+
+serveur.route("/", accueil)
+serveur.route("/executer", executer, methodes=["POST"])
+
+si programme_principal:
+    afficher("🌳 Éditeur Baobab")
+    afficher("Clé d'accès :", CLE)
+    afficher("Ouvre http://127.0.0.1:8000 dans ton navigateur et colle la clé.")
+    serveur.demarrer(8000)
