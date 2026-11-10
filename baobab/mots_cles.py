@@ -117,3 +117,27 @@ MODULES["statistiques"] = "baobab_statistiques"
 MODULES["reseau"] = "baobab_reseau"
 MODULES.update({"chaines": "baobab_chaines", "chaînes": "baobab_chaines"})
 MODULES.update({"securite": "baobab_securite", "sécurité": "baobab_securite"})
+
+
+# Fonctions Python ajoutées en français (eval, exec et compile exclues : sécurité)
+_NOUVELLES_FONCTIONS = {
+    "binaire": "bin", "octal": "oct", "hexadecimal": "hex",
+    "octets": "bytes", "octets_modifiables": "bytearray", "vue_memoire": "memoryview",
+    "complexe": "complex", "ensemble_fige": "frozenset", "decoupe": "slice",
+    "iterateur": "iter", "element_suivant": "next",
+    "iterateur_asynchrone": "aiter", "suivant_asynchrone": "anext",
+    "objet_de_base": "object", "attribut_calcule": "property",
+    "methode_de_classe": "classmethod", "methode_statique": "staticmethod",
+    "est_sous_classe": "issubclass", "appelable": "callable",
+    "lire_attribut": "getattr", "definir_attribut": "setattr",
+    "supprimer_attribut": "delattr", "a_attribut": "hasattr",
+    "attributs_de": "dir", "variables_de": "vars",
+    "globales": "globals", "locales": "locals",
+    "representation_texte": "repr", "en_ascii": "ascii",
+    "calculer_empreinte": "hash", "identifiant_objet": "id",
+    "aide_python": "help", "quitter": "quit", "point_d_arret": "breakpoint",
+}
+for _fr, _py in _NOUVELLES_FONCTIONS.items():
+    DICTIONNAIRE.setdefault(_fr, _py)
+    if isinstance(FONCTIONS, dict):
+        FONCTIONS.setdefault(_fr, _py)
