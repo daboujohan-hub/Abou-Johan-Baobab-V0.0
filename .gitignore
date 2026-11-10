@@ -31,3 +31,4 @@ resultat.log
 srv.log
 *.bak
 *.bak2
+app/www/
