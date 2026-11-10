@@ -69,27 +69,23 @@ def _verifier_entete(nom, valeur):
         raise ValueError("Une valeur d'en-tête ne peut pas contenir de retour à la ligne")
 
 
-def _trop_profond(texte, maxi=64):
-    prof = 0
-    dans_chaine = False
-    echappe = False
-    for c in texte:
-        if dans_chaine:
-            if echappe:
-                echappe = False
-            elif c == "\\":
-                echappe = True
-            elif c == '"':
-                dans_chaine = False
-        elif c == '"':
-            dans_chaine = True
-        elif c in "[{":
-            prof += 1
-            if prof > maxi:
-                return True
-        elif c in "]}":
-            prof -= 1
-    return False
+JSON_PROFONDEUR_MAX = 100
+_STRUCTURE_JSON = re.compile(r'"(?:[^"\\]|\\.)*"|[\[\]{}]')
+
+
+def _json_pas_trop_profond(texte, maximum=None):
+    """Faux si le JSON a plus de `maximum` niveaux (les crochets dans les textes ne comptent pas)."""
+    maximum = JSON_PROFONDEUR_MAX if maximum is None else maximum
+    profondeur = 0
+    for morceau in _STRUCTURE_JSON.finditer(texte):
+        signe = morceau.group()
+        if signe == "[" or signe == "{":
+            profondeur += 1
+            if profondeur > maximum:
+                return False
+        elif signe == "]" or signe == "}":
+            profondeur -= 1
+    return True
 
 
 class Cookie:
@@ -373,8 +369,8 @@ class Demande:
             raise ErreurHTTP(415, "Le contenu doit être du JSON (Content-Type: application/json)")
         try:
             texte = self.corps.decode("utf-8")
-            if _trop_profond(texte):
-                raise ValueError("JSON trop profond")
+            if not _json_pas_trop_profond(texte):
+                raise ErreurHTTP(400, "Le JSON envoyé est trop profond")
             return json.loads(texte)
         except (ValueError, RecursionError):  # UnicodeDecodeError est une ValueError
             raise ErreurHTTP(400, "Le JSON envoyé est invalide") from None
@@ -481,31 +477,6 @@ def route(chemin, fonction=None, methodes=None):
     if fonction is None:
         return enregistrer
     return enregistrer(fonction)
-
-
-def documenter(chemin="/documentation", titre="Documentation"):
-    """Ajoute une page qui liste les adresses du site et leurs méthodes.
-
-    chemin : l'adresse de la page (la version JSON est chemin + ".json").
-    """
-    def adresses():
-        ignorees = (chemin, chemin + ".json")
-        return [{"adresse": a, "methodes": sorted(_methodes.get(a, ["GET", "POST"]))}
-                for a in sorted(_routes) if a not in ignorees]
-
-    def en_json(parametres, demande):
-        corps = json.dumps({"titre": titre, "adresses": adresses()}, ensure_ascii=False)
-        return repondre(corps, type_contenu="application/json")
-
-    def en_html(parametres, demande):
-        lignes = "".join(
-            "<li><code>{}</code> : méthodes {}</li>".format(
-                echapper(a["adresse"]), echapper(", ".join(a["methodes"])))
-            for a in adresses())
-        return page(titre, "<h1>{}</h1><ul>{}</ul>".format(echapper(titre), lignes))
-
-    route(chemin, en_html)
-    route(chemin + ".json", en_json)
 
 
 def _trouver_route(chemin):
@@ -1262,3 +1233,106 @@ self.addEventListener("fetch", (e) => {{
             ("/icone-512.png", icone_de(512)),
             ("/hors-ligne", page_hors_ligne)):
         route(adresse, fonction, methodes=["GET"])
+
+
+# ------------------------------------------------- documentation automatique
+
+
+def _decrire_routes(masquer=()):
+    """La liste des adresses de l'application, avec leur description."""
+    masquees = set(masquer)
+    description = []
+    for adresse, fonction in sorted(_routes.items()):
+        if adresse in masquees or getattr(fonction, "_documentation", False):
+            continue
+        parametres = [
+            {"nom": nom, "type": genre or "texte"}
+            for nom, genre in re.findall(r"<([A-Za-z_][A-Za-z0-9_]*)(?::([a-z]+))?>", adresse)
+        ]
+        try:
+            nombre = len(inspect.signature(fonction).parameters)
+        except (TypeError, ValueError):
+            nombre = 0
+        description.append({
+            "adresse": adresse,
+            "fonction": getattr(fonction, "__name__", "?"),
+            "description": (inspect.getdoc(fonction) or "").strip()[:1000],
+            "parametres_adresse": parametres,
+            "recoit_la_demande": nombre >= 2,
+            "methodes": list(_methodes.get(adresse, METHODES_PAR_DEFAUT)),
+        })
+    return description
+
+
+def _fichiers_publics_decrits():
+    # seulement le nom du dossier, jamais son chemin complet
+    return [{"prefixe": prefixe, "dossier": os.path.basename(racine)}
+            for prefixe, racine in _dossiers_publics]
+
+
+def _page_documentation(titre, masquer):
+    sections = []
+    for adresse in _decrire_routes(masquer):
+        parametres = repeter("<li><code>{{nom}}</code> : {{type}}</li>", adresse["parametres_adresse"])
+        sections.append(modele(
+            "<section><h2><code>{{adresse}}</code></h2>"
+            "<p><small>fonction {{fonction}} · méthodes {{methodes}}</small></p>"
+            "<p style='white-space:pre-wrap'>{{description}}</p>{{parametres|brut}}</section>",
+            {
+                "adresse": adresse["adresse"],
+                "fonction": adresse["fonction"],
+                "methodes": ", ".join(adresse["methodes"]),
+                "description": adresse["description"],
+                "parametres": f"<ul>{parametres}</ul>" if parametres else "",
+            },
+        ))
+    publics = repeter("<li><code>{{prefixe}}/…</code> (dossier « {{dossier}} »)</li>",
+                      _fichiers_publics_decrits())
+    contenu = modele(
+        "<h1>{{titre}}</h1>{{sections|brut}}{{publics|brut}}",
+        {
+            "titre": titre,
+            "sections": "".join(sections) or "<p>Aucune adresse pour l'instant.</p>",
+            "publics": f"<h2>Fichiers publics</h2><ul>{publics}</ul>" if publics else "",
+        },
+    )
+    return page(titre, contenu)
+
+
+def documenter(chemin="/documentation", titre="Documentation", masquer=(), acces=None):
+    """Crée une page qui liste automatiquement les adresses de ton application.
+
+        serveur.documenter()                       # la page est sur /documentation
+        serveur.documenter("/aide", "Mon API", masquer=["/admin"])
+
+    La description de chaque adresse vient du texte écrit au début de sa fonction
+    (entre trois guillemets). La version pour les programmes est sur chemin + ".json".
+    Les adresses ajoutées après serveur.documenter(...) apparaissent aussi.
+
+    masquer : adresses à ne pas montrer.
+    acces   : une fonction qui reçoit la demande et dit si le visiteur a le droit de voir la
+              page. En production, protège-la : elle révèle comment ton site est construit.
+    """
+    masquer = tuple(masquer)
+
+    def autorise(demande):
+        return acces is None or bool(acces(demande))
+
+    def introuvable():
+        return repondre(page("Page introuvable", "<h1>404</h1>"), code=404)
+
+    def version_page(parametres, demande):
+        if not autorise(demande):
+            return introuvable()
+        return _page_documentation(titre, masquer)
+
+    def version_json(parametres, demande):
+        if not autorise(demande):
+            return introuvable()
+        return {"titre": titre, "adresses": _decrire_routes(masquer),
+                "fichiers_publics": _fichiers_publics_decrits()}
+
+    version_page._documentation = True
+    version_json._documentation = True
+    route(chemin, version_page, methodes=["GET"])
+    route(chemin + ".json", version_json, methodes=["GET"])

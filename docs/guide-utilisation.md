@@ -279,3 +279,10 @@ en JSON. Le modèle complet est dans `exemples/api_mobile.bao`.
 
 Règles : HTTPS en ligne ; jeton à durée courte ; clé hors du code ; aucun secret dans un jeton
 (il est signé mais lisible) ; CORS ne protège que les navigateurs.
+
+## Un piège à connaître : tes propres noms ne sont jamais traduits
+
+Si tu donnes à l'une de tes fonctions le nom d'une méthode (`ajouter`, `trier`, `separer`, `obtenir`,
+`vider`...), Baobab ne traduit plus ce mot nulle part dans ton fichier : `ma_liste.ajouter(3)` reste
+`ajouter` et provoque une erreur. Choisis des noms plus précis (`ajouter_une_note`, `trier_les_eleves`).
+Pour voir ce que Baobab a compris : `baobab python mon_programme.bao`.
