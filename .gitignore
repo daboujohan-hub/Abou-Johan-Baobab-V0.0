@@ -32,3 +32,9 @@ srv.log
 *.bak
 *.bak2
 app/www/
+Abou-Johan-Baobab-V0.0/
+verifier_variables.py
+inventaire.log
+mutation.log
+*.ok
+essai*.bao
