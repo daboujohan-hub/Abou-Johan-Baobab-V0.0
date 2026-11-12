@@ -2,22 +2,53 @@ name: Publier
 
 on:
   workflow_dispatch:
+    inputs:
+      cible:
+        description: "Où publier ?"
+        type: choice
+        options:
+          - testpypi
+          - pypi
+        default: testpypi
+
+permissions:
+  contents: read
 
 jobs:
+  tester:
+    name: Tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Installer le paquet
+        run: python -m pip install .
+      - name: Tests Python
+        run: python -m unittest discover tests
+      - name: Tests Baobab
+        run: baobab tester exemples
+
   construire:
-    name: Tester et construire le paquet
+    name: Construire et vérifier le paquet
+    needs: tester
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Installer l'outil de construction
-        run: python -m pip install build
-      - name: Lancer les tests
-        run: python -m unittest discover tests
-      - name: Construire le paquet
+      - name: Outils de construction
+        run: python -m pip install build twine
+      - name: Construire
         run: python -m build
+      - name: Vérifier le paquet
+        run: python -m twine check dist/*
       - uses: actions/upload-artifact@v4
         with:
           name: paquet
@@ -25,6 +56,7 @@ jobs:
 
   publier-testpypi:
     name: Envoyer sur TestPyPI
+    if: ${{ inputs.cible == 'testpypi' }}
     needs: construire
     runs-on: ubuntu-latest
     environment: testpypi
@@ -39,3 +71,18 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+
+  publier-pypi:
+    name: Envoyer sur PyPI
+    if: ${{ inputs.cible == 'pypi' }}
+    needs: construire
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: paquet
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
