@@ -3,11 +3,11 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "baobab-francais"
-version = "0.15.0"
+name = "baobab-fr"
+version = "0.16.0"
 description = "Baobab : un langage de programmation en français, propulsé par Python"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "Diomande Abou Johan (Aboudev)"}]
