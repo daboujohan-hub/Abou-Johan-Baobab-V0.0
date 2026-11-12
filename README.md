@@ -1,6 +1,6 @@
 # 🌳 Baobab — Langage de programmation en français
 
-![Logo Baobab 2026](docs/images/baobab-2026.jpg)
+![Logo Baobab 2026](https://raw.githubusercontent.com/daboujohan-hub/Abou-Johan-Baobab-V0.0/main/docs/images/baobab-2026.jpg)
 
 **Baobab** est un langage de programmation en français, conçu pour aider les débutants à apprendre la logique de programmation avant de passer progressivement à Python.
 
@@ -18,20 +18,15 @@ Il traduit le code Baobab en Python, puis l’exécute. Les erreurs sont présen
 - Bibliothèques françaises pour les dates, les fichiers, le dessin, les mathématiques, le hasard et le temps.
 - Outils de test pour les programmes et exemples.
 - Analyse de fichiers pour repérer les fichiers volumineux, les doublons et les fichiers anciens, sans les supprimer.
-
-## 🖼️ Ajouter le logo au dépôt
-
-Le README affiche le logo depuis ce chemin :
-
-```text
-docs/images/baobab-2026.jpg
-```
-
-Crée ce dossier dans le dépôt et place l’image `baobab-2026.jpg` à cet emplacement. Si tu utilises le fichier README fourni ici, conserve exactement ce chemin pour que l’image s’affiche sur GitHub.
+- Serveur web intégré : routes, pages, API JSON, documentation automatique, application installable.
+- Sécurité par défaut : HTML protégé, mots de passe hachés, jetons signés, limites de débit, validation des données.
+- Réseau : télécharger et envoyer du JSON ou des formulaires, sans que tes secrets suivent une redirection.
+- Nombres et calendrier en français : `en_lettres`, `formater_monnaie` (FCFA), `formater_date`.
+- [Liste complète des fonctions et précautions d'usage](https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0/blob/main/docs/fonctions.md).
 
 ## 🚀 Installation
 
-Baobab nécessite **Python 3.8 ou une version plus récente**.
+Baobab nécessite **Python 3.9 ou une version plus récente**.
 
 ```bash
 git clone https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0.git
