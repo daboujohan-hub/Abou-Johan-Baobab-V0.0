@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Baobab — programmer en français</title>
+<meta name="description" content="Baobab est un langage de programmation en français qui se traduit en Python, avec des erreurs expliquées en français.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --fond:#f5f8f3;--texte:#10261a;--doux:#4a5f52;--panneau:#ffffff;--bord:#cfdccf;
+  --vert:#0b6b3a;--orange:#d9680a;--code:#10261a;--code-txt:#e6efe8;--kw:#f5a24b;--str:#8fd8a8;
+  --titre:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --corps:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fond:#0f1a14;--texte:#e6efe8;--doux:#a3b8aa;--panneau:#16261c;--bord:#2a3f31;
+    --vert:#6fcf97;--orange:#f09a3a;--code:#0a130e;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --fond:#0f1a14;--texte:#e6efe8;--doux:#a3b8aa;--panneau:#16261c;--bord:#2a3f31;
+  --vert:#6fcf97;--orange:#f09a3a;--code:#0a130e;color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 4rem);scroll-behavior:smooth}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--fond);color:var(--texte);font:1.0625rem/1.65 var(--corps)}
+main,footer{width:min(100% - 2.5rem,62rem);margin-inline:auto}
+a{color:var(--vert)}
+:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+p{max-width:62ch;margin:0 0 1rem}
+h1{font:800 clamp(2.4rem,7vw,4rem)/1.02 var(--titre);letter-spacing:-.02em;margin:0 0 1rem}
+h2{font:700 1.7rem/1.2 var(--titre);margin:0 0 1rem}
+h3{font:700 1.1rem var(--titre);margin:0 0 .3rem}
+code{font-family:var(--mono);font-size:.9em;background:var(--panneau);border:1px solid var(--bord);border-radius:.3rem;padding:.05em .35em}
+.hero{display:grid;gap:2rem;padding:3.5rem 0 2rem}
+@media (min-width:56rem){.hero{grid-template-columns:1fr 1.05fr;align-items:center}}
+.lead{font-size:1.2rem;color:var(--doux)}
+.btn{display:inline-block;padding:.75rem 1.2rem;border-radius:.5rem;font-weight:700;text-decoration:none;margin:.25rem .5rem .25rem 0}
+.btn.p{background:var(--vert);color:var(--fond)}
+.btn.s{border:2px solid var(--vert);color:var(--vert)}
+.sommaire{display:flex;gap:.5rem;overflow-x:auto;padding:.7rem 0;position:sticky;top:env(safe-area-inset-top,0px);background:var(--fond);z-index:5;border-bottom:1px solid var(--bord)}
+.sommaire a{white-space:nowrap;padding:.3rem .85rem;border:1px solid var(--bord);border-radius:2rem;text-decoration:none;font-size:.95rem}
+.panneau{background:var(--code);color:var(--code-txt);border-radius:.6rem;overflow:hidden}
+.onglets{position:relative}
+.onglets input{position:absolute;opacity:0;pointer-events:none}
+.onglets label{display:inline-block;padding:.65rem 1rem;cursor:pointer;font-weight:700;font-size:.95rem}
+#v-bao:checked + label,#v-py:checked + label{box-shadow:inset 0 -3px var(--kw)}
+#v-bao:focus-visible + label,#v-py:focus-visible + label{outline:3px solid var(--kw);outline-offset:-3px}
+pre{margin:0;padding:1rem 1.2rem;overflow-x:auto;font:400 .92rem/1.6 var(--mono)}
+.onglets .py{display:none}
+#v-py:checked ~ .py{display:block}
+#v-py:checked ~ .bao{display:none}
+.sortie{margin:0;padding:.7rem 1.2rem;border-top:1px solid rgba(230,239,232,.18);font:400 .9rem var(--mono);max-width:none}
+.k{color:var(--kw)}.s{color:var(--str)}
+section{padding:2.4rem 0;border-top:1px solid var(--bord)}
+.grille{display:grid;gap:1.6rem}
+@media (min-width:48rem){.grille{grid-template-columns:1fr 1fr}}
+.ex p{margin:0 0 .6rem}
+ol.etapes{list-style:none;counter-reset:e;padding:0;margin:0 0 1.2rem;display:grid;gap:.9rem;max-width:62ch}
+ol.etapes li{counter-increment:e;padding-left:3rem;position:relative}
+ol.etapes li::before{content:counter(e);position:absolute;left:0;top:0;width:2.1rem;height:2.1rem;border-radius:50%;background:var(--orange);color:var(--fond);font:800 1rem/2.1rem var(--titre);text-align:center}
+dl.def{display:grid;gap:.7rem 1.5rem;margin:0}
+@media (min-width:48rem){dl.def{grid-template-columns:11rem 1fr}}
+dl.def dt{font:600 .95rem var(--mono);color:var(--vert)}
+dl.def dd{margin:0 0 .4rem}
+dl.chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:1rem 1.5rem;margin:0}
+dl.chiffres dt{color:var(--doux);font-size:.95rem}
+dl.chiffres dd{margin:0;font:700 1.5rem var(--titre)}
+details{border-top:1px solid var(--bord);padding:.8rem 0}
+details:last-of-type{border-bottom:1px solid var(--bord)}
+summary{cursor:pointer;font-weight:700}
+details p{margin:.6rem 0 0}
+ul.liens{padding-left:1.2rem;margin:0}
+footer{padding:2rem 0 3rem;border-top:1px solid var(--bord);color:var(--doux)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <div>
+    <h1>Programmer en français</h1>
+    <p class="lead">Baobab est un langage de programmation écrit en français, pour apprendre la logique avant de passer à Python. Il traduit ton code en Python, l’exécute, et explique tes erreurs en français.</p>
+    <p>
+      <a class="btn p" href="https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0">Voir le code sur GitHub</a>
+      <a class="btn s" href="https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0/blob/main/docs/fonctions.md">Lire la liste des fonctions</a>
+    </p>
+  </div>
+  <div class="panneau onglets">
+    <input type="radio" name="v" id="v-bao" checked>
+    <label for="v-bao">Baobab</label>
+    <input type="radio" name="v" id="v-py">
+    <label for="v-py">Python généré</label>
+<pre class="bao"><span class="k">fonction</span> salut(prenom):
+    <span class="k">si</span> prenom == <span class="s">""</span>:
+        <span class="k">retourner</span> <span class="s">"Bonjour tout le monde"</span>
+    <span class="k">retourner</span> <span class="s">"Bonjour "</span> + prenom
+
+<span class="k">afficher</span>(salut(<span class="s">"Awa"</span>))</pre>
+<pre class="py"><span class="k">def</span> salut(prenom):
+    <span class="k">if</span> prenom == <span class="s">""</span>:
+        <span class="k">return</span> <span class="s">"Bonjour tout le monde"</span>
+    <span class="k">return</span> <span class="s">"Bonjour "</span> + prenom
+
+<span class="k">print</span>(salut(<span class="s">"Awa"</span>))</pre>
+    <p class="sortie">Résultat : Bonjour Awa</p>
+  </div>
+</header>
+
+<nav class="sommaire" aria-label="Dans cette page">
+  <a href="#pourquoi">Pourquoi</a><a href="#fonctionnement">Comment ça marche</a><a href="#bases">Les bases</a><a href="#erreurs">Les erreurs</a><a href="#site">Un site web</a><a href="#securite">La sécurité</a><a href="#modules">Les modules</a><a href="#questions">Questions</a>
+</nav>
+
+<section id="pourquoi">
+  <h2>Pourquoi un langage en français</h2>
+  <p>Presque tous les langages utilisent des mots anglais : <code>if</code>, <code>for</code>, <code>return</code>, <code>print</code>. Pour un débutant francophone, c’est une difficulté de plus avant même de comprendre la logique.</p>
+  <p>Baobab remplace ces mots par <code>si</code>, <code>pour</code>, <code>retourner</code>, <code>afficher</code>. Tu te concentres sur l’idée : les variables, les conditions, les boucles, les fonctions. Quand tu es à l’aise, tu passes à Python et tu retrouves les mêmes idées.</p>
+  <p>Il s’adresse aux débutants francophones, aux enseignants qui veulent un outil en français, et à ceux qui veulent écrire vite un petit site ou une API.</p>
+</section>
+
+<section id="fonctionnement">
+  <h2>Comment ça marche</h2>
+  <ol class="etapes">
+    <li>Tu écris ton programme dans un fichier <code>.bao</code>.</li>
+    <li>Baobab traduit les mots français en Python, mot à mot. Les textes entre guillemets et les commentaires ne sont jamais modifiés.</li>
+    <li>Python exécute le résultat.</li>
+    <li>Tu vois ce que le programme affiche, ou un message d’erreur en français.</li>
+  </ol>
+  <p>Tu peux regarder la traduction quand tu veux :</p>
+  <div class="panneau"><pre>baobab programme.bao             lance le programme
+baobab python programme.bao      montre le Python généré
+baobab expliquer programme.bao   chaque ligne et son équivalent Python
+baobab tester exemples           lance les tests écrits en Baobab
+baobab                           mode interactif</pre></div>
+</section>
+
+<section id="bases">
+  <h2>Les bases, en cinq exemples</h2>
+  <div class="grille">
+    <div class="ex"><h3>Variables et affichage</h3><p>Une variable garde une valeur sous un nom. <code>afficher</code> l’écrit à l’écran.</p>
+      <div class="panneau"><pre>age = 15
+afficher("Mon age est", age)</pre><p class="sortie">Mon age est 15</p></div></div>
+    <div class="ex"><h3>Calculs</h3><p>Baobab calcule comme une calculatrice : <code>+ - * /</code>.</p>
+      <div class="panneau"><pre>prix = 1500
+quantite = 3
+afficher(prix * quantite)</pre><p class="sortie">4500</p></div></div>
+    <div class="ex"><h3>Décisions</h3><p><code>si</code> exécute le bloc décalé seulement si la condition est vraie.</p>
+      <div class="panneau"><pre>age = 15
+si age &gt;= 18:
+    afficher("Majeur")
+si age &lt; 18:
+    afficher("Mineur")</pre><p class="sortie">Mineur</p></div></div>
+    <div class="ex"><h3>Répétitions</h3><p><code>intervalle(3)</code> donne 0, 1, 2 : la boucle passe une fois par nombre.</p>
+      <div class="panneau"><pre>pour i dans intervalle(3):
+    afficher(i)</pre><p class="sortie">0<br>1<br>2</p></div></div>
+    <div class="ex"><h3>Listes</h3><p>Une liste range plusieurs valeurs. On peut ajouter, trier, parcourir et compter.</p>
+      <div class="panneau"><pre>fruits = ["mangue", "banane"]
+fruits.ajouter("papaye")
+fruits.trier()
+
+pour f dans fruits:
+    afficher(f.majuscule())
+
+afficher("Nombre de fruits :", longueur(fruits))</pre><p class="sortie">BANANE<br>MANGUE<br>PAPAYE<br>Nombre de fruits : 3</p></div></div>
+    <div class="ex"><h3>Fonctions</h3><p>Une fonction range des instructions sous un nom, pour les réutiliser. Tu en as un exemple tout en haut de la page, avec sa traduction Python.</p></div>
+  </div>
+</section>
+
+<section id="erreurs">
+  <h2>Des erreurs qui aident</h2>
+  <p>Quand tu te trompes, tu n’as pas un message anglais cryptique. Voici un vrai message de Baobab, obtenu quand une méthode n’existait pas encore :</p>
+  <div class="panneau"><pre>💥 Impossible de charger ce fichier
+   ligne 85 : serveur.documenter("/documentation", "API des notes")
+   Cet objet n'a pas de 'documenter'. Vérifie le nom de la méthode.</pre></div>
+  <p style="margin-top:1rem">Le message donne la ligne, le code en cause et un conseil. Quand tu fais une faute de frappe, Baobab propose le nom le plus proche.</p>
+</section>
+
+<section id="site">
+  <h2>Un site web en quelques lignes</h2>
+  <p>Baobab contient un serveur web. Voici la page d’accueil d’une application de notes, simplifiée à partir de <code>exemples/notes_installable.bao</code> :</p>
+  <div class="panneau"><pre>importer serveur
+
+NOTES = []
+
+fonction accueil(parametres, demande):
+    liste = serveur.repeter("&lt;li&gt;{{element}}&lt;/li&gt;", NOTES)
+    contenu = serveur.modele("&lt;h1&gt;Mes notes&lt;/h1&gt;&lt;ul&gt;{{liste|brut}}&lt;/ul&gt;", {"liste": liste})
+    retourner serveur.page("Mes notes", contenu)
+
+serveur.route("/", accueil)
+
+si programme_principal:
+    serveur.demarrer(8000)</pre></div>
+  <p style="margin-top:1rem"><code>route</code> relie une adresse (ici <code>/</code>) à une fonction. <code>modele</code> fabrique le HTML et protège les textes. <code>demarrer(8000)</code> lance le site : tu l’ouvres sur <code>http://127.0.0.1:8000</code>.</p>
+  <h3>Pensé pour le français</h3>
+  <div class="panneau"><pre>importer nombres
+importer calendrier
+
+afficher(nombres.en_lettres(1500))
+afficher(nombres.formater_monnaie(5000))
+afficher(calendrier.formater_date(2026, 11, 10))</pre><p class="sortie">mille cinq cents<br>5 000 FCFA<br>mardi 10 novembre 2026</p></div>
+</section>
+
+<section id="securite">
+  <h2>La sécurité, expliquée</h2>
+  <p>Un site reçoit des données de gens qu’on ne connaît pas. Baobab protège les cas les plus courants sans que tu aies à y penser :</p>
+  <dl class="def">
+    <dt>HTML protégé</dt><dd>Si un visiteur écrit du code dans un formulaire, il s’affiche comme du texte et ne s’exécute jamais. Le marqueur <code>|brut</code> coupe cette protection : réserve-le au HTML que tu as fabriqué toi-même.</dd>
+    <dt>Mots de passe</dt><dd>Jamais gardés en clair : seule une empreinte est enregistrée (PBKDF2-SHA256, 600 000 itérations).</dd>
+    <dt>Trop d’essais</dt><dd><code>limiter</code> refuse les demandes trop fréquentes. L’exemple d’espace membre bloque après 5 échecs de connexion.</dd>
+    <dt>Champs inattendus</dt><dd><code>valider</code> ne garde que les champs que tu as décrits : un visiteur ne peut pas en ajouter d’autres.</dd>
+    <dt>Fichiers publics</dt><dd>Le serveur refuse de sortir du dossier public, d’ouvrir les fichiers cachés ou de suivre les liens symboliques.</dd>
+    <dt>Cookies et JSON</dt><dd>Les cookies de session sont protégés (HttpOnly, SameSite). Un JSON énorme ou trop profond est refusé.</dd>
+  </dl>
+</section>
+
+<section id="modules">
+  <h2>Les 16 modules, en une phrase</h2>
+  <dl class="def">
+    <dt>avance</dt><dd>Fonctions puissantes (<code>evaluer</code>, <code>executer_texte</code>) et <code>lire_valeur</code>, la version sûre.</dd>
+    <dt>base</dt><dd>Une petite base de données.</dd>
+    <dt>calendrier</dt><dd>Jour de la semaine, date en français, jours entre deux dates.</dd>
+    <dt>chaines</dt><dd>Compter les mots, couper un texte, retirer les accents.</dd>
+    <dt>dates</dt><dd>Date du jour, âge, différence en jours.</dd>
+    <dt>dessin</dt><dd>Dessiner (carré, cercle, étoile) et enregistrer en SVG.</dd>
+    <dt>disque</dt><dd>Analyser des fichiers : les plus gros, les doublons, les anciens.</dd>
+    <dt>donnees</dt><dd>Lire et écrire du JSON et du CSV.</dd>
+    <dt>fichiers</dt><dd>Lire, écrire, lister, supprimer.</dd>
+    <dt>nombres</dt><dd>Nombres en lettres, montants en FCFA.</dd>
+    <dt>reseau</dt><dd>Télécharger et envoyer du JSON ou des formulaires.</dd>
+    <dt>securite</dt><dd>Mots de passe, jetons, signatures.</dd>
+    <dt>serveur</dt><dd>Site web et API.</dd>
+    <dt>statistiques</dt><dd>Moyenne, médiane, écart type.</dd>
+    <dt>taches</dt><dd>Lancer du code toutes les N secondes ou chaque jour.</dd>
+    <dt>tests</dt><dd>Tester des programmes et des sites.</dd>
+  </dl>
+  <p style="margin-top:1.2rem">Le détail de chaque fonction, avec les précautions d’usage, est dans <a href="https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0/blob/main/docs/fonctions.md">la liste complète</a>.</p>
+  <dl class="chiffres" style="margin-top:1.5rem">
+    <div><dt>Fonctions et classes</dt><dd>149</dd></div>
+    <div><dt>Tests Python</dt><dd>391</dd></div>
+    <div><dt>Exemples testés</dt><dd>58 sur 58</dd></div>
+    <div><dt>Version</dt><dd>0.16.0</dd></div>
+  </dl>
+</section>
+
+<section id="essayer">
+  <h2>L’essayer</h2>
+  <p>Baobab n’est pas encore publié sur PyPI : on l’installe depuis GitHub. Il faut Python 3.9 ou plus récent.</p>
+  <div class="panneau"><pre>git clone https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0.git
+cd Abou-Johan-Baobab-V0.0
+python -m baobab lancer exemples/bonjour.bao</pre></div>
+</section>
+
+<section id="questions">
+  <h2>Questions fréquentes</h2>
+  <details><summary>Faut-il connaître Python ?</summary><p>Non. Baobab est fait pour commencer. Python devient utile plus tard.</p></details>
+  <details><summary>Puis-je utiliser les modules de Python ?</summary><p>Oui. Les modules standard de Python s’importent aussi avec <code>importer</code>.</p></details>
+  <details><summary>Baobab est-il rapide ?</summary><p>Il a la même vitesse que Python, car il s’appuie dessus.</p></details>
+  <details><summary>Puis-je l’utiliser pour un vrai site public ?</summary><p>Il convient pour s’entraîner et pour de petits projets. Son serveur est éducatif : pas de HTTPS intégré, sessions gardées en mémoire. Il n’a pas été audité par un tiers : ne l’utilise pas pour des données bancaires ou de santé.</p></details>
+  <details><summary>Sur quels systèmes fonctionne-t-il ?</summary><p>Il a été testé sous Android (Termux) et Linux. Windows et macOS n’ont pas été vérifiés.</p></details>
+  <details><summary>Est-il gratuit ?</summary><p>Oui, sous licence MIT.</p></details>
+</section>
+
+<section>
+  <h2>Où en est le projet</h2>
+  <p>Le développement est mis en pause à la version 0.16.0. Le code, les tests et la documentation restent sur GitHub pour le reprendre plus tard. Un prototype d’application d’apprentissage (leçons et éditeur) se trouve dans le dépôt : il n’est pas terminé.</p>
+  <h3 style="margin-top:1.4rem">Les documents</h3>
+  <ul class="liens">
+    <li><a href="https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0">Le dépôt GitHub et son README</a></li>
+    <li><a href="https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0/blob/main/docs/fonctions.md">Toutes les fonctions, avec les précautions d’usage</a></li>
+    <li><a href="https://github.com/daboujohan-hub/Abou-Johan-Baobab-V0.0/blob/main/docs/guide-utilisation.md">Le guide d’utilisation</a></li>
+  </ul>
+</section>
+
+</main>
+<footer>
+  <p>Créé par Aboudev, en Côte d’Ivoire. Licence MIT.</p>
+</footer>
+</body>
+</html>
